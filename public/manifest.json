@@ -1,0 +1,16 @@
+{
+  "name": "Templo Verde Crop Manager",
+  "short_name": "Templo Verde",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#050505",
+  "description": "High-performance cannabis grow management.",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192"
+    }
+  ]
+}
