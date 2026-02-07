@@ -1,9 +1,13 @@
 import React from 'react';
-import { LayoutDashboard, Sprout, ClipboardList, Package, Droplets, Activity } from 'lucide-react';
+import { LayoutDashboard, Sprout, ClipboardList, Package, Droplets, Activity, GitBranch } from 'lucide-react';
 import './Sidebar.css';
 import { rooms } from '../data/mockData';
 
 const Sidebar = ({ currentView, navigateTo }) => {
+    // Separate Vege room from Flora rooms
+    const vegeRoom = rooms.find(r => r.type === 'Vege');
+    const floraRooms = rooms.filter(r => r.type === 'Flora');
+
     return (
         <aside className="sidebar">
             <div className="sidebar-header">
@@ -25,13 +29,25 @@ const Sidebar = ({ currentView, navigateTo }) => {
 
                 <div className="nav-section">
                     <p className="nav-label">SALAS</p>
-                    {rooms.map(room => (
+                    {/* Vege Pipeline - Special Navigation */}
+                    {vegeRoom && (
+                        <button
+                            className={`nav-item ${currentView === 'vege-pipeline' || currentView.startsWith('vege-') ? 'active' : ''}`}
+                            onClick={() => navigateTo('vege-pipeline')}
+                        >
+                            <GitBranch size={20} color="var(--accent-secondary)" />
+                            <span>{vegeRoom.name}</span>
+                            <span className="nav-badge">Pipeline</span>
+                        </button>
+                    )}
+                    {/* Flora Rooms */}
+                    {floraRooms.map(room => (
                         <button
                             key={room.id}
-                            className={`nav-item ${currentView === 'room' && room.id === 'R1' /* TODO: fix logic */ ? '' : ''}`} // logic handled in parent usually, simplified here
+                            className={`nav-item ${currentView === 'room' ? '' : ''}`}
                             onClick={() => navigateTo('room', room.id)}
                         >
-                            <Sprout size={20} color={room.type === 'Vege' ? 'var(--accent-secondary)' : 'var(--accent-primary)'} />
+                            <Sprout size={20} color="var(--accent-primary)" />
                             <span>{room.name}</span>
                         </button>
                     ))}
@@ -65,3 +81,4 @@ const Sidebar = ({ currentView, navigateTo }) => {
 };
 
 export default Sidebar;
+

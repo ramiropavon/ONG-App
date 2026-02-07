@@ -89,3 +89,16 @@
     background-color: var(--accent-primary);
     box-shadow: 0 0 8px var(--accent-primary);
 }
+
+/* Navigation Badge */
+.nav-badge {
+    margin-left: auto;
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(76, 201, 240, 0.15);
+    color: var(--accent-secondary);
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}

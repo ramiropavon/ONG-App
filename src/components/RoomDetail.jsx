@@ -7,7 +7,10 @@ import {
 import {
     LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area, BarChart, Bar
 } from 'recharts';
+import FloraHighPerformance from './FloraHighPerformance';
+import PulseClimateHealth from './PulseClimateHealth';
 import './RoomDetail.css';
+
 
 const getHarvestCountdown = (geneticsId, currentDay) => {
     const gen = genetics.find(g => g.id === geneticsId);
@@ -250,56 +253,22 @@ const RoomDetail = ({ roomId }) => {
     const renderEnvironment = () => (
         <div className="ambiente-tab-content">
             {room.type === 'Vege' ? renderVegeLayout() : (
-                <div className="environmental-detailed-grid">
-                    <h3>Control Ambiental Detallado</h3>
-                    <div className="chart-container large">
-                        <h4 className="chart-title">Variación 24h: Temp / Humedad / VPD</h4>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <AreaChart data={roomSensors}>
-                                <defs>
-                                    <linearGradient id="colorVpd" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="var(--accent-secondary)" stopOpacity={0.3} />
-                                        <stop offset="95%" stopColor="var(--accent-secondary)" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                                <XAxis dataKey="time" stroke="#666" />
-                                <YAxis yAxisId="left" stroke="#8884d8" orientation="left" />
-                                <YAxis yAxisId="right" stroke="#82ca9d" orientation="right" />
-                                <Tooltip contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }} />
-                                <Area yAxisId="right" type="monotone" dataKey="vpd" stroke="var(--accent-secondary)" fill="url(#colorVpd)" name="VPD (kPa)" />
-                                <Line yAxisId="left" type="monotone" dataKey="temp" stroke="#ffc658" name="Temp (°C)" dot={false} />
-                                <Line yAxisId="right" type="monotone" dataKey="humidity" stroke="#82ca9d" name="Hum (%)" dot={false} />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </div>
-
-                    <div className="kpi-grid" style={{ marginTop: '20px' }}>
-                        <div className="kpi-card">
-                            <div className="kpi-content">
-                                <span className="kpi-label">VPD Promedio</span>
-                                <div className="kpi-value">{room.vpd}</div>
-                            </div>
-                        </div>
-                        <div className="kpi-card">
-                            <div className="kpi-content">
-                                <span className="kpi-label">Temp Max (24h)</span>
-                                <div className="kpi-value">27.5°C</div>
-                            </div>
-                        </div>
-                        <div className="kpi-card">
-                            <div className="kpi-content">
-                                <span className="kpi-label">CO2 Promedio</span>
-                                <div className="kpi-value">{room.co2} <small>ppm</small></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <PulseClimateHealth roomId={roomId} />
             )}
         </div>
     );
 
     const renderIrrigation = () => {
+        // Use FloraHighPerformance component for Flora rooms
+        if (room.type === 'Flora') {
+            return (
+                <div className="riego-tab-content">
+                    <FloraHighPerformance />
+                </div>
+            );
+        }
+
+        // Fallback for Vege or other room types
         const deltaEC = room.rootZone && room.strategy ? (room.rootZone.runoffEC - (room.strategy.inputEC || room.strategy.ec)).toFixed(2) : 0;
         const isSaltHigh = deltaEC > 1.5;
         const isAcidic = room.rootZone?.runoffPH < 5.5;

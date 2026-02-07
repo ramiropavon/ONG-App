@@ -175,3 +175,103 @@ export const irrigationLogs = [
   { timestamp: '2023-12-05T08:00:00', ecIn: 2.2, ecOut: 2.5, phOut: 6.1, waterTemp: 20, roomId: 'R3' },
   { timestamp: '2023-12-05T16:00:00', ecIn: 2.2, ecOut: 2.8, phOut: 5.9, waterTemp: 20, roomId: 'R3' },
 ];
+
+// ========== PULSE PRO SENSOR DATA ==========
+
+// Real-time KPIs from Pulse Pro
+export const pulseRealTime = {
+  R2: {
+    temp: 26.5,
+    tempMaxYesterday: 28.0,
+    humidity: 55,
+    vpd: 1.4,
+    co2: 420,
+    ppfd: 950,
+    status: 'ONLINE'
+  },
+  R3: {
+    temp: 25.8,
+    tempMaxYesterday: 27.2,
+    humidity: 58,
+    vpd: 1.2,
+    co2: 410,
+    ppfd: 850,
+    status: 'ONLINE'
+  }
+};
+
+// Day vs Night Temperature (DIF Analysis) - Last 7 days
+export const pulseDayNightTemp = {
+  R2: [
+    { day: 'Lun', tempDay: 27.5, tempNight: 21.0 },
+    { day: 'Mar', tempDay: 28.0, tempNight: 20.5 },
+    { day: 'Mie', tempDay: 27.2, tempNight: 21.5 },
+    { day: 'Jue', tempDay: 26.8, tempNight: 20.8 },
+    { day: 'Vie', tempDay: 27.5, tempNight: 21.2 },
+    { day: 'Sab', tempDay: 28.2, tempNight: 20.0 },
+    { day: 'Dom', tempDay: 27.0, tempNight: 21.0 }
+  ],
+  R3: [
+    { day: 'Lun', tempDay: 26.5, tempNight: 22.0 },
+    { day: 'Mar', tempDay: 27.0, tempNight: 22.5 },
+    { day: 'Mie', tempDay: 26.2, tempNight: 23.0 },
+    { day: 'Jue', tempDay: 25.8, tempNight: 22.8 },
+    { day: 'Vie', tempDay: 26.5, tempNight: 22.2 },
+    { day: 'Sab', tempDay: 27.2, tempNight: 21.5 },
+    { day: 'Dom', tempDay: 26.0, tempNight: 22.0 }
+  ]
+};
+
+// VPD Time-in-Zone (Last 7 days) - Color-coded by quality
+export const pulseVPDHistory = {
+  R2: [
+    { day: 'Lun', vpd: 1.35, zone: 'optimal' },
+    { day: 'Mar', vpd: 1.42, zone: 'optimal' },
+    { day: 'Mie', vpd: 1.28, zone: 'optimal' },
+    { day: 'Jue', vpd: 1.55, zone: 'stress' },
+    { day: 'Vie', vpd: 1.38, zone: 'optimal' },
+    { day: 'Sab', vpd: 1.45, zone: 'optimal' },
+    { day: 'Dom', vpd: 1.32, zone: 'optimal' }
+  ],
+  R3: [
+    { day: 'Lun', vpd: 1.15, zone: 'optimal' },
+    { day: 'Mar', vpd: 1.22, zone: 'optimal' },
+    { day: 'Mie', vpd: 0.95, zone: 'stress' },
+    { day: 'Jue', vpd: 1.18, zone: 'optimal' },
+    { day: 'Vie', vpd: 1.25, zone: 'optimal' },
+    { day: 'Sab', vpd: 1.30, zone: 'optimal' },
+    { day: 'Dom', vpd: 1.12, zone: 'optimal' }
+  ]
+};
+
+// CO2 Respiratory Cycle (Last 24 hours)
+export const pulseCO2Cycle = {
+  R2: [
+    { time: '00:00', co2: 420 },
+    { time: '02:00', co2: 425 },
+    { time: '04:00', co2: 430 },
+    { time: '06:00', co2: 435 },
+    { time: '08:00', co2: 410 },
+    { time: '10:00', co2: 380 },
+    { time: '12:00', co2: 350 },
+    { time: '14:00', co2: 340 },
+    { time: '16:00', co2: 360 },
+    { time: '18:00', co2: 390 },
+    { time: '20:00', co2: 415 },
+    { time: '22:00', co2: 420 }
+  ],
+  R3: [
+    { time: '00:00', co2: 410 },
+    { time: '02:00', co2: 415 },
+    { time: '04:00', co2: 420 },
+    { time: '06:00', co2: 425 },
+    { time: '08:00', co2: 400 },
+    { time: '10:00', co2: 370 },
+    { time: '12:00', co2: 345 },
+    { time: '14:00', co2: 335 },
+    { time: '16:00', co2: 355 },
+    { time: '18:00', co2: 385 },
+    { time: '20:00', co2: 405 },
+    { time: '22:00', co2: 410 }
+  ]
+};

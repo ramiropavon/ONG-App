@@ -1,0 +1,405 @@
+/* ========== PULSE CLIMATE HEALTH DASHBOARD ========== */
+
+.pulse-climate-health {
+    padding: 20px;
+    position: relative;
+}
+
+/* Pulse Status Indicator */
+.pulse-status-indicator {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.85rem;
+    color: #94a3b8;
+    z-index: 10;
+}
+
+.pulse-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.pulse-dot.online {
+    background: #10b981;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
+}
+
+.pulse-dot.offline {
+    background: #ef4444;
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
+}
+
+@keyframes pulse-glow {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.7;
+        transform: scale(1.1);
+    }
+}
+
+/* ========== 1. PULSE REAL-TIME STRIP ========== */
+
+.pulse-realtime-strip {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    margin-bottom: 30px;
+}
+
+.kpi-card-pulse {
+    background: linear-gradient(135deg, rgba(30, 30, 30, 0.9), rgba(20, 20, 20, 0.95));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.kpi-card-pulse::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.kpi-card-pulse:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.kpi-card-pulse:hover::before {
+    opacity: 1;
+}
+
+.kpi-card-pulse.vpd-critical {
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.kpi-icon {
+    color: #64748b;
+    flex-shrink: 0;
+}
+
+.kpi-icon.status-ok {
+    color: #10b981;
+}
+
+.kpi-icon.status-alert {
+    color: #ef4444;
+}
+
+.kpi-icon.status-optimal {
+    color: #10b981;
+    filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.6));
+}
+
+.kpi-icon.light-on {
+    color: #fbbf24;
+    filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.6));
+}
+
+.kpi-icon.light-off {
+    color: #6366f1;
+}
+
+.kpi-content {
+    flex: 1;
+}
+
+.kpi-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1;
+    margin-bottom: 6px;
+}
+
+.kpi-value.vpd-optimal {
+    color: #10b981;
+    text-shadow: 0 0 12px rgba(16, 185, 129, 0.5);
+}
+
+.kpi-subtitle {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ========== 2. DIF MORPHOLOGY SECTION ========== */
+
+.dif-morphology-section {
+    background: linear-gradient(135deg, rgba(30, 30, 30, 0.9), rgba(20, 20, 20, 0.95));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 30px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.section-header h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 0;
+}
+
+.dif-badge {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.dif-badge.purple-boost {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.dif-badge.neutral {
+    background: rgba(100, 116, 139, 0.3);
+    color: #cbd5e1;
+    border: 1px solid rgba(100, 116, 139, 0.5);
+}
+
+.dif-badge.stretch-alert {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+    animation: alert-pulse 2s ease-in-out infinite;
+}
+
+@keyframes alert-pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 4px 20px rgba(239, 68, 68, 0.7);
+    }
+}
+
+.dif-chart-container {
+    margin-bottom: 20px;
+}
+
+.dif-explanation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dif-info-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 12px 20px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dif-label {
+    font-size: 0.9rem;
+    color: #94a3b8;
+}
+
+.dif-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.dif-value.purple-boost {
+    color: #8b5cf6;
+}
+
+.dif-value.stretch-alert {
+    color: #ef4444;
+}
+
+.dif-guide {
+    display: flex;
+    gap: 24px;
+}
+
+.guide-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: #cbd5e1;
+}
+
+.guide-icon {
+    font-size: 1.2rem;
+}
+
+.guide-icon.purple {
+    color: #8b5cf6;
+}
+
+.guide-icon.neutral {
+    color: #94a3b8;
+}
+
+.guide-icon.alert {
+    color: #ef4444;
+}
+
+/* ========== 3. AIR QUALITY GRID ========== */
+
+.air-quality-grid {
+    display: grid;
+    grid-template-columns: 60% 40%;
+    gap: 20px;
+}
+
+.vpd-zone-section,
+.co2-monitor-section {
+    background: linear-gradient(135deg, rgba(30, 30, 30, 0.9), rgba(20, 20, 20, 0.95));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 24px;
+}
+
+.vpd-zone-chart,
+.co2-chart {
+    margin-bottom: 20px;
+}
+
+.vpd-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.85rem;
+    color: #cbd5e1;
+}
+
+.legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.legend-dot.green {
+    background: #10b981;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+}
+
+.legend-dot.yellow {
+    background: #f59e0b;
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+}
+
+.legend-dot.red {
+    background: #ef4444;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+}
+
+.co2-insight {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    background: rgba(100, 116, 139, 0.1);
+    border-left: 3px solid #64748b;
+    border-radius: 8px;
+    margin-top: 16px;
+}
+
+.insight-icon {
+    color: #64748b;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.co2-insight p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #cbd5e1;
+    line-height: 1.5;
+}
+
+/* ========== RESPONSIVE ========== */
+
+@media (max-width: 1400px) {
+    .pulse-realtime-strip {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 1024px) {
+    .pulse-realtime-strip {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .air-quality-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .pulse-realtime-strip {
+        grid-template-columns: 1fr;
+    }
+
+    .dif-explanation {
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
+    }
+
+    .dif-guide {
+        flex-direction: column;
+        gap: 12px;
+    }
+}
