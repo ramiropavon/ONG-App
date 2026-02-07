@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { rooms, batches, tasks, genetics, sensorHistory, irrigationLogs } from '../data/mockData';
 import {
-    Leaf, Calendar, Lightbulb, Thermometer, Layers, Sprout,
-    Droplets, Activity, Wind, Clock
+    Leaf, Calendar, Lightbulb, Thermometer, Layers, Sprout, Zap,
+    Droplets, Activity, Wind, Clock, AlertCircle
 } from 'lucide-react';
 import {
     LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area, BarChart, Bar
@@ -13,6 +13,11 @@ const getHarvestCountdown = (geneticsId, currentDay) => {
     const gen = genetics.find(g => g.id === geneticsId);
     if (!gen) return '?';
     return Math.max(0, gen.floweringDays - currentDay);
+};
+
+const calculateDays = (dateStr) => {
+    const diff = new Date() - new Date(dateStr);
+    return Math.floor(diff / (1000 * 60 * 60 * 24));
 };
 
 const RoomDetail = ({ roomId }) => {
@@ -30,246 +35,376 @@ const RoomDetail = ({ roomId }) => {
 
     // --- Tab Rendering Helpers ---
 
-    const renderVegeLayout = () => (
-        <div className="vege-layout">
-            <h3 className="section-header">Estructura de Sala</h3>
-            <div className="beds-grid">
-                {/* Incubators */}
-                {room.incubators && (
-                    <div className="bed-card incubator">
-                        <div className="bed-header">
-                            <Sprout size={20} className="icon-incubator" />
-                            <h4>{room.incubators.name}</h4>
-                        </div>
-                        <div className="bed-stats">
-                            <span>{room.incubators.count} Incubadoras</span>
-                            <span className="status-ok">Enraizando</span>
-                        </div>
+    const renderVegeLayout = () => {
+        const pipelineBatches = batches.filter(b => b.roomId === roomId && (b.phase === 'Enraizado' || b.phase === 'Vege'));
+
+        return (
+            <div className="vege-logistics-grid">
+                {/* 1. PRODUCTION_PIPELINE */}
+                <div className="pipeline-widget card-dark">
+                    <div className="widget-header">
+                        <Activity size={18} color="var(--accent-primary)" />
+                        <h4>Production Pipeline</h4>
+                        <span className="badge-mode">Flujo de Lotes</span>
                     </div>
-                )}
-                {/* Beds */}
-                {room.beds && room.beds.map(bed => {
-                    const bedBatch = roomBatches.find(b => b.bedId === bed.id);
-                    return (
-                        <div key={bed.id} className="bed-card">
-                            <div className="bed-header">
-                                <Layers size={20} className={bed.type === 'Madres' ? 'icon-mother' : 'icon-clone'} />
-                                <h4>{bed.name}</h4>
-                                <span className="bed-type">{bed.type}</span>
-                            </div>
-                            <div className="bed-content">
-                                {bedBatch ? (
-                                    <>
-                                        <div className="batch-name">{bedBatch.name}</div>
-                                        <div className="batch-stats">
-                                            <div className="stat">
-                                                <span className="label">Plantas</span>
-                                                <span className="val">{bedBatch.plantCount}</span>
-                                            </div>
-                                            {bedBatch.daysOld !== undefined && (
-                                                <div className="stat">
-                                                    <span className="label">Edad</span>
-                                                    <span className="val">{bedBatch.daysOld} días</span>
-                                                </div>
-                                            )}
+                    <div className="pipeline-list">
+                        {pipelineBatches.map(batch => {
+                            const isEnraizado = batch.phase === 'Enraizado';
+                            const progress = isEnraizado
+                                ? (batch.startDay / batch.targetDay) * 100
+                                : (batch.vegetativeDay / batch.targetVegetativeDays) * 100;
+
+                            return (
+                                <div key={batch.id} className="pipeline-item">
+                                    <div className="item-main">
+                                        <div className="item-loc">
+                                            <span className="label">{batch.location}</span>
+                                            <span className="val">{batch.name}</span>
                                         </div>
-                                    </>
-                                ) : (
-                                    <div className="empty-bed">Cama disponible</div>
-                                )}
-                            </div>
-                            <div className="bed-footer">
-                                <span>{bed.m2}m²</span>
-                                {bed.type === 'Madres' && <span className="highlight">Riego: Estrategia B</span>}
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-        </div>
-    );
-
-    const renderOverview = () => (
-        <>
-            <div className="stats-grid">
-                <div className="stat-card">
-                    <Thermometer size={20} className="stat-icon" />
-                    <div>
-                        <span className="label">Temp</span>
-                        <div className="value">{room.temp}°C</div>
-                    </div>
-                </div>
-                <div className="stat-card">
-                    <Droplets size={20} className="stat-icon" />
-                    <div>
-                        <span className="label">Humedad</span>
-                        <div className="value">{room.humidity}%</div>
-                    </div>
-                </div>
-                <div className="stat-card">
-                    <Wind size={20} className="stat-icon" />
-                    <div>
-                        <span className="label">VPD</span>
-                        <div className="value">{room.vpd}</div>
-                    </div>
-                </div>
-                <div className="stat-card">
-                    <Lightbulb size={20} className="stat-icon" />
-                    <div>
-                        <span className="label">PPFD</span>
-                        <div className="value">{room.ppfd || '-'}</div>
-                    </div>
-                </div>
-            </div>
-
-            {room.type === 'Vege' ? renderVegeLayout() : (
-                <section className="section">
-                    <h3>Lotes Activos</h3>
-                    <div className="batches-list">
-                        {roomBatches.map(batch => (
-                            <div key={batch.id} className="batch-card">
-                                <div className="batch-header">
-                                    <h4>{batch.name}</h4>
-                                    <span className="phase">{batch.phase}</span>
-                                </div>
-                                <div className="batch-details">
-                                    <div className="detail-item">
-                                        <Leaf size={16} />
-                                        <span>{batch.plantCount} Plantas</span>
+                                        <div className="item-status">
+                                            <span className={`status-badge ${batch.status?.toLowerCase() || 'active'}`}>
+                                                {isEnraizado ? `Día ${batch.startDay}/${batch.targetDay}` : `Día ${batch.vegetativeDay}/${batch.targetVegetativeDays}`}
+                                            </span>
+                                        </div>
                                     </div>
-                                    {batch.currentDay && (
-                                        <div className="detail-item">
-                                            <Calendar size={16} />
-                                            <span>Día {batch.currentDay}</span>
-                                        </div>
-                                    )}
-                                    {batch.phase === 'Flora' && (
-                                        <div className="detail-item countdown">
-                                            <span className="countdown-label">Cosecha en:</span>
-                                            <strong>{getHarvestCountdown(batch.geneticsId, batch.currentDay)} días</strong>
+                                    <div className="progress-bar-mini">
+                                        <div className="progress-fill" style={{ width: `${Math.min(100, progress)}%` }}></div>
+                                    </div>
+                                    {batch.destinedFor && (
+                                        <div className="sync-alert-box">
+                                            {(() => {
+                                                const destRoom = rooms.find(r => r.id === batch.destinedFor);
+                                                const harvestDate = destRoom ? new Date(destRoom.harvestDate) : null;
+                                                const readyDate = new Date(batch.readyDate);
+                                                const diffDays = harvestDate ? Math.floor((harvestDate - readyDate) / (1000 * 60 * 60 * 24)) : 0;
+
+                                                return (
+                                                    <div className={`sync-status ${diffDays >= 0 ? 'optimal' : 'risk'}`}>
+                                                        <Clock size={12} />
+                                                        <span>Sync {destRoom?.name}: {diffDays >= 0 ? `+${diffDays} Day Buffer` : `${diffDays} Day Delay`}</span>
+                                                        <span className="status-label">{diffDays >= 0 ? 'OPTIMAL' : 'DELAY_RISK'}</span>
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
                                     )}
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
-                </section>
-            )}
-
-            <section className="section">
-                <h3>Tareas Pendientes</h3>
-                <div className="tasks-list">
-                    {roomTasks.length > 0 ? roomTasks.map(task => (
-                        <div key={task.id} className={`task-item ${task.status.toLowerCase()}`}>
-                            <div className="task-check"></div>
-                            <div className="task-info">
-                                <span className="task-name">{task.task}</span>
-                                <span className="task-date">{task.scheduledDate}</span>
-                            </div>
-                            <span className="task-status">{task.status}</span>
-                        </div>
-                    )) : <p className="no-data">No hay tareas pendientes.</p>}
                 </div>
-            </section>
-        </>
-    );
+
+                {/* 2. MOTHER_PLANT_CARDS */}
+                <div className="mothers-widget card-dark">
+                    <div className="widget-header">
+                        <Layers size={18} color="#e056fd" />
+                        <h4>Gestión de Madres (Stock)</h4>
+                    </div>
+                    <div className="mothers-grid">
+                        {room.mothers?.map(mother => {
+                            const daysSince = calculateDays(mother.lastCutDate);
+                            const recoveryPct = Math.min(100, (daysSince / mother.recoveryDaysNeeded) * 100);
+                            const isReady = recoveryPct >= 100;
+                            const isOld = mother.ageDays > 365;
+
+                            return (
+                                <div key={mother.id} className={`mother-card ${isOld ? 'warning-border' : ''}`}>
+                                    <div className="mother-head">
+                                        <span className="mother-id">{mother.id}</span>
+                                        <span className={`recovery-badge ${isReady ? 'ready' : 'recovering'}`}>
+                                            {isReady ? 'READY TO CUT' : `RECOVERING (${Math.round(recoveryPct)}%)`}
+                                        </span>
+                                    </div>
+                                    <div className="mother-details">
+                                        <div className="m-strain">{mother.strain}</div>
+                                        <div className="m-stats">
+                                            <span>Edad: {mother.ageDays}d {isOld && <AlertCircle size={10} color="#ff5252" />}</span>
+                                            <span>Ø {mother.avgClonesPerCut} esquejes</span>
+                                        </div>
+                                    </div>
+                                    <div className="recovery-track">
+                                        <div className="recovery-fill" style={{ width: `${recoveryPct}%` }}></div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const renderOverview = () => {
+        const deltaEC = room.rootZone && room.strategy ? (room.rootZone.runoffEC - (room.strategy.inputEC || room.strategy.ec)).toFixed(2) : 0;
+        const isSaltHigh = deltaEC > 1.5;
+        const isAcidic = room.rootZone?.runoffPH < 5.5;
+
+        // Mock Events based on request
+        const upcomingEvents = [
+            { day: "Hoy", task: "Medición Runoff Manual", type: "measurement", urgent: true },
+            { day: "Mañana", task: "Poda de Bajos (Lollipopping)", type: "stress", urgent: false },
+            { day: "Viernes", task: "Top Dress / Booster PK", type: "feeding", urgent: false }
+        ];
+
+        return (
+            <div className="resumen-tab-content">
+                {/* 1. KEY ENVIRONMENTAL KPIs (Compact) */}
+                <div className="stats-grid">
+                    <div className="stat-card">
+                        <Thermometer size={20} className="stat-icon" />
+                        <div><span className="label">Temp</span><div className="value">{room.temp}°C</div></div>
+                    </div>
+                    <div className="stat-card">
+                        <Droplets size={20} className="stat-icon" />
+                        <div><span className="label">Hum.</span><div className="value">{room.humidity}%</div></div>
+                    </div>
+                    <div className="stat-card">
+                        <Activity size={20} className="stat-icon" />
+                        <div><span className="label">VPD</span><div className="value">{room.vpd}</div></div>
+                    </div>
+                    <div className="stat-card">
+                        <Zap size={20} className="stat-icon" />
+                        <div><span className="label">PPFD</span><div className="value">{room.ppfd || '-'}</div></div>
+                    </div>
+                    <div className="stat-card">
+                        <Wind size={20} className="stat-icon" />
+                        <div><span className="label">CO2</span><div className="value">{room.co2 || '-'} <small style={{ fontSize: '0.4em' }}>ppm</small></div></div>
+                    </div>
+                </div>
+
+                <div className="resumen-main-grid">
+                    {/* Logica Especial por Tipo de Sala */}
+                    {room.type === 'Vege' ? (
+                        <>
+                            {renderVegeLayout()}
+                            {/* Cronograma en columna derecha para Vege */}
+                            <div className="resumen-side-col">
+                                <div className="timeline-widget card-dark">
+                                    <div className="widget-header">
+                                        <Calendar size={18} color="#4cc9f0" />
+                                        <h4>Eventos</h4>
+                                    </div>
+                                    <div className="timeline-list">
+                                        {upcomingEvents.map((event, idx) => (
+                                            <div key={idx} className={`timeline-item ${event.urgent ? 'urgent' : ''}`}>
+                                                <div className="item-details">
+                                                    <div className="item-day">{event.day}</div>
+                                                    <div className="item-task">{event.task}</div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            {/* 2. CROP_CALENDAR_TIMELINE (Flora) */}
+                            <div className="timeline-widget-full card-dark">
+                                <div className="widget-header">
+                                    <Calendar size={18} color="#4cc9f0" />
+                                    <h4>Cronograma Semanal</h4>
+                                </div>
+                                <div className="timeline-list">
+                                    {upcomingEvents.map((event, idx) => (
+                                        <div key={idx} className={`timeline-item ${event.urgent ? 'urgent' : ''}`}>
+                                            <div className="timeline-marker">
+                                                <div className={`item-type-dot ${event.type}`}></div>
+                                                <div className="timeline-line"></div>
+                                            </div>
+                                            <div className="item-details">
+                                                <div className="item-day">{event.day}</div>
+                                                <div className="item-task">{event.task}</div>
+                                            </div>
+                                            {event.urgent && <span className="urgent-tag">URGENTE</span>}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* 3. QUICK STATUS / BATCH INFO (Flora) */}
+                            <div className="batch-quick-info card-dark">
+                                <div className="widget-header">
+                                    <Leaf size={18} color="var(--accent-primary)" />
+                                    <h4>Estado del Lote</h4>
+                                </div>
+                                <div className="batch-details-grid">
+                                    {roomBatches.map(batch => (
+                                        <div key={batch.id} className="batch-row">
+                                            <span className="batch-name">{batch.name}</span>
+                                            <span className="batch-days">Día {batch.currentDay} - {genetics.find(g => g.id === batch.geneticsId)?.name}</span>
+                                            <div className="batch-progress-bar">
+                                                <div className="progress-fill" style={{ width: `${(batch.currentDay / (genetics.find(g => g.id === batch.geneticsId)?.floweringDays || 60)) * 100}%` }}></div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </div>
+            </div>
+        );
+    };
 
     const renderEnvironment = () => (
-        <div className="charts-section">
-            <h3>Variación 24h: Temp / Humedad / VPD</h3>
-            <div className="chart-container large">
-                <ResponsiveContainer width="100%" height={300}>
-                    <AreaChart data={roomSensors}>
-                        <defs>
-                            <linearGradient id="colorVpd" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="var(--accent-secondary)" stopOpacity={0.3} />
-                                <stop offset="95%" stopColor="var(--accent-secondary)" stopOpacity={0} />
-                            </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                        <XAxis dataKey="time" stroke="#666" />
-                        <YAxis yAxisId="left" stroke="#8884d8" orientation="left" />
-                        <YAxis yAxisId="right" stroke="#82ca9d" orientation="right" />
-                        <Tooltip contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }} />
-                        <Area yAxisId="right" type="monotone" dataKey="vpd" stroke="var(--accent-secondary)" fill="url(#colorVpd)" name="VPD (kPa)" />
-                        <Line yAxisId="left" type="monotone" dataKey="temp" stroke="#ffc658" name="Temp (°C)" dot={false} />
-                        <Line yAxisId="right" type="monotone" dataKey="humidity" stroke="#82ca9d" name="Hum (%)" dot={false} />
-                    </AreaChart>
-                </ResponsiveContainer>
-            </div>
+        <div className="ambiente-tab-content">
+            {room.type === 'Vege' ? renderVegeLayout() : (
+                <div className="environmental-detailed-grid">
+                    <h3>Control Ambiental Detallado</h3>
+                    <div className="chart-container large">
+                        <h4 className="chart-title">Variación 24h: Temp / Humedad / VPD</h4>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <AreaChart data={roomSensors}>
+                                <defs>
+                                    <linearGradient id="colorVpd" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="var(--accent-secondary)" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="var(--accent-secondary)" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                                <XAxis dataKey="time" stroke="#666" />
+                                <YAxis yAxisId="left" stroke="#8884d8" orientation="left" />
+                                <YAxis yAxisId="right" stroke="#82ca9d" orientation="right" />
+                                <Tooltip contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }} />
+                                <Area yAxisId="right" type="monotone" dataKey="vpd" stroke="var(--accent-secondary)" fill="url(#colorVpd)" name="VPD (kPa)" />
+                                <Line yAxisId="left" type="monotone" dataKey="temp" stroke="#ffc658" name="Temp (°C)" dot={false} />
+                                <Line yAxisId="right" type="monotone" dataKey="humidity" stroke="#82ca9d" name="Hum (%)" dot={false} />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
 
-            <div className="kpi-grid" style={{ marginTop: '20px' }}>
-                <div className="kpi-card">
-                    <div className="kpi-content">
-                        <span className="kpi-label">VPD Promedio</span>
-                        <div className="kpi-value">{room.vpd}</div>
-                    </div>
-                </div>
-                <div className="kpi-card">
-                    <div className="kpi-content">
-                        <span className="kpi-label">Temp Max (24h)</span>
-                        <div className="kpi-value">27.5°C</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-
-    const renderFeeding = () => (
-        <div className="feeding-section">
-            {/* Strategy Card */}
-            {room.strategy && (
-                <div className="strategy-card">
-                    <div className="strategy-header">
-                        <Activity size={24} color="var(--accent-primary)" />
-                        <div>
-                            <h4>{room.strategy.name}</h4>
-                            <span className="strategy-type">{room.strategy.type}</span>
+                    <div className="kpi-grid" style={{ marginTop: '20px' }}>
+                        <div className="kpi-card">
+                            <div className="kpi-content">
+                                <span className="kpi-label">VPD Promedio</span>
+                                <div className="kpi-value">{room.vpd}</div>
+                            </div>
                         </div>
-                    </div>
-                    <div className="strategy-details">
-                        <div className="strategy-item">
-                            <span className="label">Riegos</span>
-                            <span className="val">{room.strategy.shots} disparos</span>
+                        <div className="kpi-card">
+                            <div className="kpi-content">
+                                <span className="kpi-label">Temp Max (24h)</span>
+                                <div className="kpi-value">27.5°C</div>
+                            </div>
                         </div>
-                        <div className="strategy-item">
-                            <span className="label">Volumen</span>
-                            <span className="val">{room.strategy.volumePerShot} ml/planta</span>
+                        <div className="kpi-card">
+                            <div className="kpi-content">
+                                <span className="kpi-label">CO2 Promedio</span>
+                                <div className="kpi-value">{room.co2} <small>ppm</small></div>
+                            </div>
                         </div>
-                        <div className="strategy-item">
-                            <span className="label">Objetivos</span>
-                            <span className="val">EC {room.strategy.ec} / pH {room.strategy.ph}</span>
-                        </div>
-                        <div className="strategy-item">
-                            <span className="label">Temp Agua</span>
-                            <span className="val">{room.strategy.waterTemp}°C</span>
-                        </div>
-                    </div>
-                    <div className="shot-timeline">
-                        <Clock size={16} />
-                        <span>Horarios: {room.strategy.shotTimes.join(' - ')}</span>
                     </div>
                 </div>
             )}
-
-            <h3>Historial de Riego (EC In vs Out)</h3>
-            <div className="chart-container large">
-                <ResponsiveContainer width="100%" height={250}>
-                    <BarChart data={roomIrrigation}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                        <XAxis dataKey="timestamp" tickFormatter={(t) => t.split('T')[0].slice(5)} stroke="#666" />
-                        <YAxis stroke="#666" domain={[0, 4]} />
-                        <Tooltip
-                            cursor={{ fill: 'transparent' }}
-                            contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}
-                        />
-                        <Bar dataKey="ecIn" fill="var(--accent-primary)" name="EC In" barSize={30} radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="ecOut" fill="var(--accent-danger)" name="EC Out" barSize={30} radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                </ResponsiveContainer>
-            </div>
         </div>
     );
+
+    const renderIrrigation = () => {
+        const deltaEC = room.rootZone && room.strategy ? (room.rootZone.runoffEC - (room.strategy.inputEC || room.strategy.ec)).toFixed(2) : 0;
+        const isSaltHigh = deltaEC > 1.5;
+        const isAcidic = room.rootZone?.runoffPH < 5.5;
+
+        return (
+            <div className="riego-tab-content">
+                <div className="riego-main-grid">
+                    {/* 1. IRRIGATION_STRATEGY_CARD */}
+                    {room.strategy && (
+                        <div className="strategy-widget card-dark">
+                            <div className="widget-header">
+                                <Activity size={18} color="var(--accent-primary)" />
+                                <h4>Estrategia de Riego</h4>
+                                <span className="badge-mode">{room.strategy.name}</span>
+                            </div>
+                            <div className="widget-grid">
+                                <div className="metric">
+                                    <span className="label">Volumen Total</span>
+                                    <span className="val">{room.strategy.totalVolumeL}L/planta</span>
+                                </div>
+                                <div className="metric">
+                                    <span className="label">Frecuencia</span>
+                                    <span className="val">{room.strategy.shotCount} x {room.strategy.shotVolumeMl}ml</span>
+                                </div>
+                                <div className="metric">
+                                    <span className="label">Mezcla (Input)</span>
+                                    <span className="val">EC {room.strategy.inputEC || room.strategy.ec} | pH {room.strategy.inputPH || room.strategy.ph}</span>
+                                </div>
+                                <div className="metric">
+                                    <span className="label">Temp. Solución</span>
+                                    <span className="val">{room.strategy.waterTemp}°C</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 2. ROOT_ZONE_HEALTH_WIDGET */}
+                    {room.rootZone && (
+                        <div className="rootzone-widget card-dark">
+                            <div className="widget-header">
+                                <Sprout size={18} color="#06d6a0" />
+                                <h4>Salud de Raíces (Root Zone)</h4>
+                            </div>
+                            <div className="rootzone-content">
+                                <div className="dryback-section">
+                                    <div className="dryback-header">
+                                        <span>Dryback Nocturno</span>
+                                        <span className="val">{room.rootZone.drybackPercent}%</span>
+                                    </div>
+                                    <div className="progress-bar-mini">
+                                        <div className="progress-target" style={{
+                                            left: `${room.rootZone.drybackTarget[0]}%`,
+                                            width: `${room.rootZone.drybackTarget[1] - room.rootZone.drybackTarget[0]}%`
+                                        }}></div>
+                                        <div className="progress-fill-root" style={{ width: `${room.rootZone.drybackPercent}%` }}></div>
+                                    </div>
+                                    <span className="target-label">Objetivo: {room.rootZone.drybackTarget[0]}-{room.rootZone.drybackTarget[1]}%</span>
+                                </div>
+
+                                <div className="runoff-grid">
+                                    <div className={`runoff-item ${isSaltHigh ? 'alert-text' : ''}`}>
+                                        <span className="label">EC de Salida (Runoff)</span>
+                                        <span className="val">{room.rootZone.runoffEC} <small>(Δ {deltaEC})</small></span>
+                                    </div>
+                                    <div className={`runoff-item ${isAcidic ? 'alert-text' : ''}`}>
+                                        <span className="label">pH de Salida (Runoff)</span>
+                                        <span className="val">{room.rootZone.runoffPH}</span>
+                                    </div>
+                                </div>
+
+                                {(isSaltHigh || isAcidic) && (
+                                    <div className="root-alerts">
+                                        {isSaltHigh && <div className="alert-sm danger"><AlertCircle size={12} /> ALERTA: Acumulación de Sales</div>}
+                                        {isAcidic && <div className="alert-sm warning"><AlertCircle size={12} /> ALERTA: Zona Radicular Acidificada</div>}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* 3. IRRIGATION HISTORY */}
+                <div className="irrigation-history-detailed">
+                    <h3>Historial de Nutrición (EC In vs Out)</h3>
+                    <div className="chart-container large">
+                        <ResponsiveContainer width="100%" height={300}>
+                            <BarChart data={roomIrrigation}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
+                                <XAxis dataKey="timestamp" tickFormatter={(t) => t.split('T')[0].slice(5)} stroke="#666" />
+                                <YAxis stroke="#666" domain={[0, 5]} />
+                                <Tooltip
+                                    cursor={{ fill: 'transparent' }}
+                                    contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #333' }}
+                                />
+                                <Bar dataKey="ecIn" fill="var(--accent-primary)" name="EC Entrada" barSize={35} radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="ecOut" fill="var(--accent-danger)" name="EC Salida" barSize={35} radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+
 
     return (
         <div className="room-detail">
@@ -300,7 +435,7 @@ const RoomDetail = ({ roomId }) => {
                         className={`tab-btn ${activeTab === 'riego' ? 'active' : ''}`}
                         onClick={() => setActiveTab('riego')}
                     >
-                        Alimentación
+                        Riego y Raíces
                     </button>
                 </div>
             </header>
@@ -308,7 +443,7 @@ const RoomDetail = ({ roomId }) => {
             <div className="tab-content">
                 {activeTab === 'resumen' && renderOverview()}
                 {activeTab === 'ambiente' && renderEnvironment()}
-                {activeTab === 'riego' && renderFeeding()}
+                {activeTab === 'riego' && renderIrrigation()}
             </div>
         </div>
     );

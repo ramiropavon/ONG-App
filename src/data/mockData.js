@@ -18,12 +18,11 @@ export const rooms = [
     ppfd: 300,
     strategy: {
       name: 'Estrategia Madres - Mantenimiento',
-      type: 'Vegetativa',
-      shots: 1,
-      volumePerShot: 400,
-      shotTimes: ['08:00'],
-      ec: 1.8,
-      ph: 5.9,
+      totalVolumeL: 0.4,
+      shotCount: 1,
+      shotVolumeMl: 400,
+      inputEC: 1.8,
+      inputPH: 5.9,
       waterTemp: 21
     },
     beds: [
@@ -32,7 +31,13 @@ export const rooms = [
       { id: 'V_B3', name: 'Cama Esquejes 3', type: 'Esquejes', m2: 2, count: 0 },
       { id: 'V_B4', name: 'Cama Madres', type: 'Madres', m2: 2, count: 8 },
     ],
-    incubators: { count: 8, name: 'Estructura Enraizado' }
+    mothers: [
+      { id: 'M-Gelato-04', strain: 'Gelato #41', ageDays: 145, lastCutDate: '2024-01-25', recoveryDaysNeeded: 15, avgClonesPerCut: 42 },
+      { id: 'M-Avocado-01', strain: 'Avocado', ageDays: 210, lastCutDate: '2024-02-01', recoveryDaysNeeded: 18, avgClonesPerCut: 35 },
+      { id: 'M-Sangria-02', strain: 'Sangría', ageDays: 380, lastCutDate: '2024-01-10', recoveryDaysNeeded: 14, avgClonesPerCut: 50 },
+    ],
+    incubators: { count: 8, name: 'Estructura Enraizado' },
+    maxCapacity: 300
   },
   {
     id: 'R2',
@@ -42,17 +47,24 @@ export const rooms = [
     lightsWatts: 4000,
     temp: 26,
     humidity: 50,
-    vpd: 1.2,
-    co2: 1000,
-    ppfd: 900,
+    vpd: 1.25,
+    co2: 1100,
+    ppfd: 950,
+    maxCapacity: 140,
+    harvestDate: '2024-03-15',
+    rootZone: {
+      drybackPercent: 32,
+      drybackTarget: [25, 35],
+      runoffEC: 4.2,
+      runoffPH: 5.4,
+    },
     strategy: {
-      name: 'Generativa 3.0 - Bulking',
-      type: 'Generativa',
-      shots: 6,
-      volumePerShot: 150,
-      shotTimes: ['08:00', '09:00', '10:00', '12:00', '14:00', '16:00'],
-      ec: 2.8,
-      ph: 5.8,
+      name: 'Generativa (Bulking)',
+      totalVolumeL: 1.35,
+      shotCount: 9,
+      shotVolumeMl: 150,
+      inputEC: 2.8,
+      inputPH: 5.8,
       waterTemp: 20
     }
   },
@@ -67,14 +79,21 @@ export const rooms = [
     vpd: 1.1,
     co2: 950,
     ppfd: 850,
+    maxCapacity: 140,
+    harvestDate: '2024-03-28',
+    rootZone: {
+      drybackPercent: 28,
+      drybackTarget: [25, 35],
+      runoffEC: 3.2,
+      runoffPH: 5.9,
+    },
     strategy: {
-      name: 'Vegetativa - Stretch',
-      type: 'Vegetativa',
-      shots: 4,
-      volumePerShot: 200,
-      shotTimes: ['08:00', '10:00', '12:00', '14:00'],
-      ec: 2.2,
-      ph: 6.0,
+      name: 'Vegetativa (Stretch)',
+      totalVolumeL: 2.1,
+      shotCount: 6,
+      shotVolumeMl: 350,
+      inputEC: 2.2,
+      inputPH: 6.0,
       waterTemp: 20
     }
   },
@@ -83,7 +102,34 @@ export const rooms = [
 export const batches = [
   { id: 'B1', name: 'Lote #2023-10-A', roomId: 'R2', geneticsId: 'g1', plantCount: 120, startDate: '2023-10-01', phase: 'Flora', currentDay: 35, bedId: null },
   { id: 'B2', name: 'Lote #2023-11-B', roomId: 'R3', geneticsId: 'g2', plantCount: 110, startDate: '2023-11-01', phase: 'Flora', currentDay: 5, bedId: null },
-  { id: 'B_E1', name: 'Esquejes Avocada', roomId: 'R1', geneticsId: 'g1', plantCount: 50, startDate: '2023-11-25', phase: 'Enraizado', daysOld: 10, bedId: 'V_B1' },
+  {
+    id: 'B_E1',
+    name: 'Esquejes Avocada',
+    roomId: 'R1',
+    geneticsId: 'g1',
+    plantCount: 50,
+    startDate: '2023-11-25',
+    phase: 'Enraizado',
+    location: 'Incubadora 1',
+    startDay: 12,
+    targetDay: 14,
+    status: 'Rooting',
+    bedId: 'V_B1'
+  },
+  {
+    id: 'B_V1',
+    name: 'Lote Pre-Vege Gelato',
+    roomId: 'R1',
+    geneticsId: 'g2',
+    plantCount: 120,
+    phase: 'Vege',
+    location: 'Cama Pre-Vege 2',
+    vegetativeDay: 18,
+    targetVegetativeDays: 28,
+    destinedFor: 'R2',
+    readyDate: '2024-03-14',
+    bedId: 'V_B2'
+  },
 ];
 
 export const inventory = [
@@ -122,4 +168,10 @@ export const irrigationLogs = [
   { timestamp: '2023-12-05T16:00:00', ecIn: 2.8, ecOut: 3.8, phOut: 5.9, waterTemp: 22, roomId: 'R2' },
   { timestamp: '2023-12-04T08:00:00', ecIn: 2.8, ecOut: 3.1, phOut: 6.1, waterTemp: 21, roomId: 'R2' },
   { timestamp: '2023-12-04T16:00:00', ecIn: 2.8, ecOut: 3.6, phOut: 5.9, waterTemp: 22, roomId: 'R2' },
+  // Vege Logs
+  { timestamp: '2023-12-05T08:00:00', ecIn: 1.8, ecOut: 1.9, phOut: 6.0, waterTemp: 21, roomId: 'R1' },
+  { timestamp: '2023-12-04T08:00:00', ecIn: 1.8, ecOut: 1.85, phOut: 6.1, waterTemp: 21, roomId: 'R1' },
+  // Flora B Logs
+  { timestamp: '2023-12-05T08:00:00', ecIn: 2.2, ecOut: 2.5, phOut: 6.1, waterTemp: 20, roomId: 'R3' },
+  { timestamp: '2023-12-05T16:00:00', ecIn: 2.2, ecOut: 2.8, phOut: 5.9, waterTemp: 20, roomId: 'R3' },
 ];
