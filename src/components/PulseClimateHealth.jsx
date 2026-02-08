@@ -1,14 +1,22 @@
-import React from 'react';
-import { Thermometer, Droplets, Activity, Wind, Sun, Moon, AlertCircle } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, BarChart, Bar, ReferenceLine } from 'recharts';
-import { pulseRealTime, pulseDayNightTemp, pulseVPDHistory, pulseCO2Cycle } from '../data/mockData';
+import React, { useState } from 'react';
+import { Thermometer, Droplets, Activity, Wind, Sun, Moon, AlertCircle, Calendar } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, BarChart, Bar, LineChart, Line, ReferenceArea, ReferenceLine } from 'recharts';
+import { pulseRealTime, pulseDayNightTemp, pulseDetailedEvolution } from '../data/mockData';
 import './PulseClimateHealth.css';
 
 const PulseClimateHealth = ({ roomId }) => {
+    const [selectedDate, setSelectedDate] = useState('2026-02-07');
+    const [visibleSeries, setVisibleSeries] = useState({
+        temp: true,
+        humidity: false,
+        vpd: true,
+        co2: false,
+        ppfd: false
+    });
+
     const realTime = pulseRealTime[roomId] || pulseRealTime.R2;
     const dayNightData = pulseDayNightTemp[roomId] || pulseDayNightTemp.R2;
-    const vpdHistory = pulseVPDHistory[roomId] || pulseVPDHistory.R2;
-    const co2Data = pulseCO2Cycle[roomId] || pulseCO2Cycle.R2;
+    const evolutionData = pulseDetailedEvolution[roomId] || pulseDetailedEvolution.R2;
 
     // Calculate DIF logic
     const lastDayData = dayNightData[dayNightData.length - 1];
@@ -16,16 +24,13 @@ const PulseClimateHealth = ({ roomId }) => {
 
     let difStatus = 'neutral';
     let difMessage = 'Crecimiento Neutro';
-    let difIcon = '◎';
 
     if (dif < -5) {
         difStatus = 'purple-boost';
         difMessage = '❄️ PURPLE BOOST / RESINA';
-        difIcon = '❄️';
     } else if (dif > 0) {
         difStatus = 'stretch-alert';
         difMessage = '⚠ ALERTA ESTIRAMIENTO';
-        difIcon = '⚠';
     }
 
     // VPD Status
@@ -37,12 +42,116 @@ const PulseClimateHealth = ({ roomId }) => {
     // Current light status (based on PPFD)
     const isLightOn = realTime.ppfd > 0;
 
+    // Toggle series visibility
+    const toggleSeries = (series) => {
+        setVisibleSeries(prev => ({
+            ...prev,
+            [series]: !prev[series]
+        }));
+    };
+
+    // Get status for each metric
+    const getMetricStatus = (metric, value) => {
+        switch (metric) {
+            case 'temp':
+                if (value > 29) return { status: '⚠️ Alto', color: '#ef4444' };
+                if (value < 18) return { status: '⚠️ Bajo', color: '#3b82f6' };
+                return { status: 'En Rango', color: '#10b981' };
+            case 'humidity':
+                if (value > 60) return { status: '⚠️ Alto', color: '#ef4444' };
+                if (value < 40) return { status: '⚠️ Bajo', color: '#f59e0b' };
+                return { status: 'En Rango', color: '#10b981' };
+            case 'vpd':
+                if (value >= 1.0 && value <= 1.5) return { status: 'Óptimo', color: '#10b981' };
+                if (value < 0.8 || value > 1.8) return { status: '⚠️ Peligro', color: '#ef4444' };
+                return { status: 'Aceptable', color: '#f59e0b' };
+            case 'co2':
+                if (value < 350) return { status: '⚠️ Bajo', color: '#ef4444' };
+                return { status: 'Normal', color: '#10b981' };
+            case 'ppfd':
+                if (value > 1000) return { status: 'Alto', color: '#fbbf24' };
+                if (value === 0) return { status: 'Noche', color: '#6366f1' };
+                return { status: 'Activo', color: '#10b981' };
+            default:
+                return { status: '', color: '#94a3b8' };
+        }
+    };
+
+    // Custom Tooltip for Master Chart
+    const MasterTooltip = ({ active, payload, label }) => {
+        if (active && payload && payload.length > 0) {
+            const dataPoint = evolutionData.find(d => d.time === label);
+            if (!dataPoint) return null;
+
+            return (
+                <div className="master-tooltip">
+                    <p className="tooltip-time">{label}</p>
+                    <div className="tooltip-metrics">
+                        <div className="metric-row">
+                            <span className="metric-icon">🌡️</span>
+                            <span className="metric-label">Temp:</span>
+                            <span className="metric-value">{dataPoint.temp}°C</span>
+                            <span className="metric-status" style={{ color: getMetricStatus('temp', dataPoint.temp).color }}>
+                                {getMetricStatus('temp', dataPoint.temp).status}
+                            </span>
+                        </div>
+                        <div className="metric-row">
+                            <span className="metric-icon">💧</span>
+                            <span className="metric-label">Hum:</span>
+                            <span className="metric-value">{dataPoint.humidity}%</span>
+                            <span className="metric-status" style={{ color: getMetricStatus('humidity', dataPoint.humidity).color }}>
+                                {getMetricStatus('humidity', dataPoint.humidity).status}
+                            </span>
+                        </div>
+                        <div className="metric-row">
+                            <span className="metric-icon">🌫️</span>
+                            <span className="metric-label">VPD:</span>
+                            <span className="metric-value">{dataPoint.vpd} kPa</span>
+                            <span className="metric-status" style={{ color: getMetricStatus('vpd', dataPoint.vpd).color }}>
+                                {getMetricStatus('vpd', dataPoint.vpd).status}
+                            </span>
+                        </div>
+                        <div className="metric-row">
+                            <span className="metric-icon">🌬️</span>
+                            <span className="metric-label">CO2:</span>
+                            <span className="metric-value">{dataPoint.co2} ppm</span>
+                            <span className="metric-status" style={{ color: getMetricStatus('co2', dataPoint.co2).color }}>
+                                {getMetricStatus('co2', dataPoint.co2).status}
+                            </span>
+                        </div>
+                        <div className="metric-row">
+                            <span className="metric-icon">💡</span>
+                            <span className="metric-label">PPFD:</span>
+                            <span className="metric-value">{dataPoint.ppfd} µmol</span>
+                            <span className="metric-status" style={{ color: getMetricStatus('ppfd', dataPoint.ppfd).color }}>
+                                {getMetricStatus('ppfd', dataPoint.ppfd).status}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        return null;
+    };
+
     return (
         <div className="pulse-climate-health">
-            {/* PULSE STATUS INDICATOR */}
-            <div className="pulse-status-indicator">
-                <div className={`pulse-dot ${realTime.status === 'ONLINE' ? 'online' : 'offline'}`}></div>
-                <span>Pulse Pro: {realTime.status}</span>
+            {/* PULSE STATUS & DATE FILTER */}
+            <div className="pulse-header-controls">
+                <div className="pulse-status-indicator">
+                    <div className={`pulse-dot ${realTime.status === 'ONLINE' ? 'online' : 'offline'}`}></div>
+                    <span>Pulse Pro: {realTime.status}</span>
+                </div>
+
+                <div className="date-filter">
+                    <Calendar size={16} className="calendar-icon" />
+                    <input
+                        type="date"
+                        value={selectedDate}
+                        onChange={(e) => setSelectedDate(e.target.value)}
+                        className="date-input"
+                    />
+                </div>
             </div>
 
             {/* 1. HEADER: PULSE REAL-TIME STRIP */}
@@ -135,91 +244,178 @@ const PulseClimateHealth = ({ roomId }) => {
                 </div>
             </div>
 
-            {/* 3. CALIDAD DE AIRE & VENTILACIÓN */}
-            <div className="air-quality-grid">
-                {/* LEFT: VPD Time-in-Zone */}
-                <div className="vpd-zone-section">
-                    <div className="section-header">
-                        <h3>Calidad VPD (Time-in-Zone)</h3>
-                    </div>
-
-                    <div className="vpd-zone-chart">
-                        <ResponsiveContainer width="100%" height={280}>
-                            <BarChart data={vpdHistory} margin={{ top: 20, right: 10, left: 10, bottom: 5 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                                <XAxis dataKey="day" stroke="#888" />
-                                <YAxis stroke="#888" domain={[0, 2]} />
-                                <Tooltip
-                                    contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #444', borderRadius: '8px' }}
-                                    labelStyle={{ color: '#fff', fontWeight: 'bold' }}
-                                />
-                                <Bar dataKey="vpd" name="VPD (kPa)" radius={[8, 8, 0, 0]}>
-                                    {vpdHistory.map((entry, index) => {
-                                        let fillColor = '#10b981'; // Green (optimal)
-                                        if (entry.zone === 'stress') {
-                                            if (entry.vpd < 1.0 || entry.vpd > 1.8) {
-                                                fillColor = '#ef4444'; // Red (danger)
-                                            } else {
-                                                fillColor = '#f59e0b'; // Yellow (stress)
-                                            }
-                                        }
-                                        return <Bar key={index} dataKey="vpd" fill={fillColor} />;
-                                    })}
-                                </Bar>
-                                <ReferenceLine y={1.0} stroke="#10b981" strokeDasharray="3 3" strokeOpacity={0.5} />
-                                <ReferenceLine y={1.5} stroke="#10b981" strokeDasharray="3 3" strokeOpacity={0.5} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-
-                    <div className="vpd-legend">
-                        <div className="legend-item">
-                            <span className="legend-dot green"></span>
-                            <span>Óptimo (1.0-1.5 kPa)</span>
-                        </div>
-                        <div className="legend-item">
-                            <span className="legend-dot yellow"></span>
-                            <span>Estrés Leve (0.8-1.0 / 1.5-1.8)</span>
-                        </div>
-                        <div className="legend-item">
-                            <span className="legend-dot red"></span>
-                            <span>Peligro (&lt;0.8 / &gt;1.8)</span>
-                        </div>
+            {/* 3. MASTER ENVIRONMENT CHART */}
+            <div className="master-environment-chart">
+                <div className="section-header">
+                    <h3>Master Environment (24h) - {selectedDate}</h3>
+                    <div className="series-toggles">
+                        <button
+                            className={`toggle-btn ${visibleSeries.temp ? 'active temp' : ''}`}
+                            onClick={() => toggleSeries('temp')}
+                        >
+                            {visibleSeries.temp ? '☑' : '☐'} Temp
+                        </button>
+                        <button
+                            className={`toggle-btn ${visibleSeries.humidity ? 'active humidity' : ''}`}
+                            onClick={() => toggleSeries('humidity')}
+                        >
+                            {visibleSeries.humidity ? '☑' : '☐'} Humedad
+                        </button>
+                        <button
+                            className={`toggle-btn ${visibleSeries.vpd ? 'active vpd' : ''}`}
+                            onClick={() => toggleSeries('vpd')}
+                        >
+                            {visibleSeries.vpd ? '☑' : '☐'} VPD
+                        </button>
+                        <button
+                            className={`toggle-btn ${visibleSeries.co2 ? 'active co2' : ''}`}
+                            onClick={() => toggleSeries('co2')}
+                        >
+                            {visibleSeries.co2 ? '☑' : '☐'} CO2
+                        </button>
+                        <button
+                            className={`toggle-btn ${visibleSeries.ppfd ? 'active ppfd' : ''}`}
+                            onClick={() => toggleSeries('ppfd')}
+                        >
+                            {visibleSeries.ppfd ? '☑' : '☐'} PPFD
+                        </button>
                     </div>
                 </div>
 
-                {/* RIGHT: CO2 Respiratory Monitor */}
-                <div className="co2-monitor-section">
-                    <div className="section-header">
-                        <h3>Ciclo de Carbono (Natural)</h3>
-                    </div>
+                <div className="master-chart-container">
+                    <ResponsiveContainer width="100%" height={450}>
+                        <LineChart data={evolutionData} margin={{ top: 20, right: 70, left: 20, bottom: 20 }}>
+                            <defs>
+                                <linearGradient id="ppfdGradient" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#fbbf24" stopOpacity={0.4} />
+                                    <stop offset="95%" stopColor="#fbbf24" stopOpacity={0} />
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#333" />
 
-                    <div className="co2-chart">
-                        <ResponsiveContainer width="100%" height={280}>
-                            <AreaChart data={co2Data} margin={{ top: 20, right: 10, left: 10, bottom: 5 }}>
-                                <defs>
-                                    <linearGradient id="colorCO2" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#94a3b8" stopOpacity={0.4} />
-                                        <stop offset="95%" stopColor="#94a3b8" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                                <XAxis dataKey="time" stroke="#888" />
-                                <YAxis stroke="#888" domain={[300, 450]} />
-                                <Tooltip
-                                    contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #444', borderRadius: '8px' }}
-                                    labelStyle={{ color: '#fff', fontWeight: 'bold' }}
+                            {/* Alert Zones */}
+                            {visibleSeries.humidity && (
+                                <ReferenceArea
+                                    yAxisId="left"
+                                    y1={60}
+                                    y2={100}
+                                    fill="#ef4444"
+                                    fillOpacity={0.1}
+                                    label={{ value: 'Riesgo Botrytis', position: 'insideTopRight', fill: '#ef4444', fontSize: 11 }}
                                 />
-                                <ReferenceLine y={400} stroke="#64748b" strokeDasharray="5 5" label={{ value: 'Nivel Exterior (400ppm)', position: 'right', fill: '#64748b', fontSize: 11 }} />
-                                <Area type="monotone" dataKey="co2" stroke="#94a3b8" fill="url(#colorCO2)" strokeWidth={2} />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </div>
+                            )}
 
-                    <div className="co2-insight">
-                        <AlertCircle size={16} className="insight-icon" />
-                        <p>Si el gráfico cae muy por debajo de 400ppm durante el día, la extracción es insuficiente (las plantas consumen todo el CO2 disponible).</p>
-                    </div>
+                            {visibleSeries.temp && (
+                                <ReferenceArea
+                                    yAxisId="left"
+                                    y1={29}
+                                    y2={35}
+                                    fill="#ef4444"
+                                    fillOpacity={0.08}
+                                    label={{ value: 'Pérdida Terpenos', position: 'insideTopLeft', fill: '#ef4444', fontSize: 11 }}
+                                />
+                            )}
+
+                            <XAxis
+                                dataKey="time"
+                                stroke="#888"
+                                tick={{ fontSize: 11 }}
+                                interval={2}
+                            />
+
+                            <YAxis
+                                yAxisId="left"
+                                stroke="#888"
+                                domain={[0, 100]}
+                                label={{ value: 'Temp (°C) / Hum (%) / VPD (kPa)', angle: -90, position: 'insideLeft', style: { fill: '#888', fontSize: 11 } }}
+                            />
+
+                            <YAxis
+                                yAxisId="right"
+                                orientation="right"
+                                stroke="#888"
+                                domain={[0, 1500]}
+                                label={{ value: 'CO2 (ppm) / PPFD (µmol)', angle: 90, position: 'insideRight', style: { fill: '#888', fontSize: 11 } }}
+                            />
+
+                            <Tooltip content={<MasterTooltip />} />
+
+                            {/* PPFD Area (Background) */}
+                            {visibleSeries.ppfd && (
+                                <Area
+                                    yAxisId="right"
+                                    type="monotone"
+                                    dataKey="ppfd"
+                                    stroke="#fbbf24"
+                                    fill="url(#ppfdGradient)"
+                                    strokeWidth={2}
+                                    strokeDasharray="5 5"
+                                    name="PPFD (µmol)"
+                                />
+                            )}
+
+                            {/* CO2 Line */}
+                            {visibleSeries.co2 && (
+                                <Line
+                                    yAxisId="right"
+                                    type="monotone"
+                                    dataKey="co2"
+                                    stroke="#94a3b8"
+                                    strokeWidth={2}
+                                    dot={false}
+                                    name="CO2 (ppm)"
+                                />
+                            )}
+
+                            {/* Temperature Line */}
+                            {visibleSeries.temp && (
+                                <Line
+                                    yAxisId="left"
+                                    type="monotone"
+                                    dataKey="temp"
+                                    stroke="#f59e0b"
+                                    strokeWidth={3}
+                                    dot={false}
+                                    name="Temp (°C)"
+                                />
+                            )}
+
+                            {/* Humidity Line */}
+                            {visibleSeries.humidity && (
+                                <Line
+                                    yAxisId="left"
+                                    type="monotone"
+                                    dataKey="humidity"
+                                    stroke="#3b82f6"
+                                    strokeWidth={3}
+                                    dot={false}
+                                    name="Humedad (%)"
+                                />
+                            )}
+
+                            {/* VPD Line */}
+                            {visibleSeries.vpd && (
+                                <Line
+                                    yAxisId="left"
+                                    type="monotone"
+                                    dataKey="vpd"
+                                    stroke="#10b981"
+                                    strokeWidth={3}
+                                    dot={false}
+                                    name="VPD (kPa)"
+                                />
+                            )}
+                        </LineChart>
+                    </ResponsiveContainer>
+                </div>
+
+                <div className="chart-insight">
+                    <AlertCircle size={16} className="insight-icon" />
+                    <p>
+                        <strong>Zonas de Alerta Activas:</strong> El gráfico muestra áreas sombreadas para condiciones de riesgo.
+                        Humedad &gt;60% aumenta riesgo de Botrytis. Temperatura &gt;29°C causa pérdida de terpenos.
+                        Usa los toggles para comparar métricas y detectar correlaciones.
+                    </p>
                 </div>
             </div>
         </div>
