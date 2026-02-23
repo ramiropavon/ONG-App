@@ -7,6 +7,7 @@ const Planner = () => {
     const [currentDate, setCurrentDate] = useState(new Date(2026, 1, 1)); // Feb 2026
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [roomFilter, setRoomFilter] = useState('all');
+    const [localTasks, setLocalTasks] = useState(tasks);
     const [completedTasks, setCompletedTasks] = useState({});
     const [showNewEventModal, setShowNewEventModal] = useState(false);
     const [draggedEvent, setDraggedEvent] = useState(null);
@@ -17,6 +18,12 @@ const Planner = () => {
 
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const firstDay = new Date(year, month, 1).getDay();
+
+    // Safely parse date string to avoid timezone shifting
+    const parseLocalDay = (dateStr) => {
+        if (!dateStr) return new Date();
+        return new Date(dateStr.includes('T') ? dateStr : `${dateStr}T00:00:00`);
+    };
 
     // Get icon for event type
     const getEventIcon = (type) => {
@@ -48,7 +55,7 @@ const Planner = () => {
         const batch = batches.find(b => b.roomId === roomFilter && b.phase === 'Flora');
         if (!batch || !batch.startDate) return null;
 
-        const startDate = new Date(batch.startDate);
+        const startDate = parseLocalDay(batch.startDate);
         const diffTime = date - startDate;
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -75,15 +82,15 @@ const Planner = () => {
 
     // Filter tasks by room
     const filteredTasks = useMemo(() => {
-        if (roomFilter === 'all') return tasks;
-        return tasks.filter(t => t.roomId === roomFilter);
-    }, [roomFilter]);
+        if (roomFilter === 'all') return localTasks;
+        return localTasks.filter(t => t.roomId === roomFilter);
+    }, [roomFilter, localTasks]);
 
     // Get events for a specific day
     const getEventsForDay = (date) => {
         if (!date) return [];
         return filteredTasks.filter(t => {
-            const taskDate = new Date(t.scheduledDate);
+            const taskDate = parseLocalDay(t.scheduledDate);
             return taskDate.getDate() === date.getDate() &&
                 taskDate.getMonth() === date.getMonth() &&
                 taskDate.getFullYear() === date.getFullYear();
@@ -96,7 +103,7 @@ const Planner = () => {
 
         batches.forEach(batch => {
             if (batch.phase === 'Flora' && batch.startDate) {
-                const startDate = new Date(batch.startDate);
+                const startDate = parseLocalDay(batch.startDate);
                 const currentDay = Math.ceil((new Date() - startDate) / (1000 * 60 * 60 * 24));
 
                 // Week 3 suggestions
@@ -172,10 +179,20 @@ const Planner = () => {
         e.preventDefault();
         if (!draggedEvent || !targetDate) return;
 
-        // Update task date (in real app, this would update the database)
-        const newDateStr = targetDate.toLocaleDateString('es-AR');
+        // Update task date in local state
+        const year = targetDate.getFullYear();
+        const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+        const day = String(targetDate.getDate()).padStart(2, '0');
+        const formattedDate = `${year}-${month}-${day}`;
+
+        setLocalTasks(prevTasks => prevTasks.map(task =>
+            task.id === draggedEvent.id
+                ? { ...task, scheduledDate: formattedDate }
+                : task
+        ));
 
         // Show toast notification
+        const newDateStr = targetDate.toLocaleDateString('es-AR');
         setToast(`Evento reprogramado para el ${newDateStr}`);
         setTimeout(() => setToast(null), 3000);
 
@@ -392,7 +409,7 @@ const Planner = () => {
                                 </div>
                                 <div className="meta-item">
                                     <CalendarIcon size={16} />
-                                    <span>Fecha: <strong>{new Date(selectedEvent.scheduledDate).toLocaleDateString('es-AR')}</strong></span>
+                                    <span>Fecha: <strong>{parseLocalDay(selectedEvent.scheduledDate).toLocaleDateString('es-AR')}</strong></span>
                                 </div>
                                 <div className={`meta-item status ${selectedEvent.status.toLowerCase()}`}>
                                     <span>Estado: <strong>{selectedEvent.status === 'Done' ? 'Completado' : 'Pendiente'}</strong></span>
