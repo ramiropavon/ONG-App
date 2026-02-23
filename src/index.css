@@ -1,34 +1,54 @@
 :root {
-  --bg-app: #050505;
-  --bg-panel: #111111;
-  --bg-card: #1a1a1a;
-  --bg-input: #222222;
+  /* Templo Verde - Sophisticated Emerald & Gold Palette */
+  --bg-app: #0a0e12;
+  --bg-panel: #0e1318;
+  --bg-card: #13171d;
+  --bg-card-hover: #181d24;
+  --bg-input: #181d24;
 
-  --border-subtle: #333333;
-  --border-strong: #444444;
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-medium: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.15);
 
-  --text-primary: #e0e0e0;
-  --text-secondary: #a0a0a0;
-  --text-muted: #666666;
+  --text-primary: #e8edf5;
+  --text-secondary: #8b92a8;
+  --text-muted: #5a6175;
+  --text-dimmed: #3d4354;
 
-  --accent-primary: #00ff9d;
-  /* Neon Green */
-  --accent-secondary: #00b8ff;
-  /* Cyan */
-  --accent-warning: #ffbf00;
-  /* Amber */
-  --accent-danger: #ff3333;
-  /* Red */
+  /* Templo Verde Brand Colors - Discrete & Elegant */
+  --accent-primary: #059669;
+  /* Emerald Green - Sophisticated */
+  --accent-secondary: #d4af37;
+  /* Gold - Refined */
+  --accent-success: #10b981;
+  /* Success Green */
+  --accent-warning: #f59e0b;
+  /* Amber Warning */
+  --accent-danger: #ef4444;
+  /* Red Alert */
+  --accent-info: #06b6d4;
+  /* Cyan Info */
 
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+  /* Gradient Accents - Emerald & Gold */
+  --gradient-primary: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  --gradient-secondary: linear-gradient(135deg, #d4af37 0%, #f59e0b 100%);
+  --gradient-chart: linear-gradient(180deg, rgba(5, 150, 105, 0.3) 0%, rgba(5, 150, 105, 0) 100%);
 
-  --radius-sm: 4px;
-  --radius-md: 8px;
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
-  --shadow-glow: 0 0 10px rgba(0, 255, 157, 0.1);
+  /* Spacing & Borders */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  /* Shadows - Emerald glow */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.2);
+  --shadow-glow: 0 0 20px rgba(5, 150, 105, 0.12);
+  --shadow-glow-gold: 0 0 20px rgba(212, 175, 55, 0.1);
 }
 
 * {
@@ -85,19 +105,19 @@ a {
   background-color: var(--bg-app);
 }
 
-/* Scrollbar */
+/* Scrollbar - More refined */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg-app);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
   background: var(--border-strong);
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -121,7 +141,7 @@ a {
 .stage-detail-placeholder h2 {
   font-size: 1.5rem;
   margin-bottom: 12px;
-  background: linear-gradient(90deg, #4cc9f0, #00ff9d);
+  background: linear-gradient(90deg, #059669, #d4af37);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -134,14 +154,32 @@ a {
 
 .stage-detail-placeholder button {
   padding: 10px 24px;
-  background: rgba(76, 201, 240, 0.1);
-  border: 1px solid var(--accent-secondary);
-  color: var(--accent-secondary);
+  background: rgba(5, 150, 105, 0.1);
+  border: 1px solid var(--accent-primary);
+  color: var(--accent-primary);
   border-radius: 8px;
   font-weight: 500;
   transition: all 0.2s;
 }
 
 .stage-detail-placeholder button:hover {
-  background: rgba(76, 201, 240, 0.2);
+  background: rgba(5, 150, 105, 0.2);
+}
+
+/* Main Layout Responsiveness */
+.main-content {
+  margin-left: 260px;
+  padding: 32px;
+  min-height: 100vh;
+  background-color: var(--bg-app);
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (max-width: 900px) {
+  .main-content {
+    margin-left: 0;
+    padding: 20px;
+    padding-top: 80px;
+    /* Space for the mobile menu button */
+  }
 }

@@ -18,6 +18,10 @@ const PulseClimateHealth = ({ roomId }) => {
     const dayNightData = pulseDayNightTemp[roomId] || pulseDayNightTemp.R2;
     const evolutionData = pulseDetailedEvolution[roomId] || pulseDetailedEvolution.R2;
 
+    // Light schedule (8:00 - 20:00 = Day)
+    const lightOnHour = 8;
+    const lightOffHour = 20;
+
     // Calculate DIF logic
     const lastDayData = dayNightData[dayNightData.length - 1];
     const dif = lastDayData.tempDay - lastDayData.tempNight;
@@ -42,8 +46,16 @@ const PulseClimateHealth = ({ roomId }) => {
     // Current light status (based on PPFD)
     const isLightOn = realTime.ppfd > 0;
 
-    // Toggle series visibility
+    // Toggle series visibility (max 3 at a time)
     const toggleSeries = (series) => {
+        const currentlyActive = Object.values(visibleSeries).filter(v => v).length;
+        const isCurrentlyVisible = visibleSeries[series];
+
+        // If trying to activate and already have 3 active, don't allow
+        if (!isCurrentlyVisible && currentlyActive >= 3) {
+            return;
+        }
+
         setVisibleSeries(prev => ({
             ...prev,
             [series]: !prev[series]
@@ -67,6 +79,7 @@ const PulseClimateHealth = ({ roomId }) => {
                 return { status: 'Aceptable', color: '#f59e0b' };
             case 'co2':
                 if (value < 350) return { status: '⚠️ Bajo', color: '#ef4444' };
+                if (value > 1500) return { status: '⚠️ Alto', color: '#ef4444' };
                 return { status: 'Normal', color: '#10b981' };
             case 'ppfd':
                 if (value > 1000) return { status: 'Alto', color: '#fbbf24' };
@@ -77,15 +90,23 @@ const PulseClimateHealth = ({ roomId }) => {
         }
     };
 
-    // Custom Tooltip for Master Chart
-    const MasterTooltip = ({ active, payload, label }) => {
+    // Enhanced Tooltip showing ALL metrics
+    const CorrelationTooltip = ({ active, payload, label }) => {
         if (active && payload && payload.length > 0) {
             const dataPoint = evolutionData.find(d => d.time === label);
             if (!dataPoint) return null;
 
+            const hour = parseInt(label.split(':')[0]);
+            const isDayTime = hour >= lightOnHour && hour < lightOffHour;
+
             return (
-                <div className="master-tooltip">
-                    <p className="tooltip-time">{label}</p>
+                <div className="correlation-tooltip">
+                    <div className="tooltip-header">
+                        <span className="tooltip-time">{label}</span>
+                        <span className={`tooltip-period ${isDayTime ? 'day' : 'night'}`}>
+                            {isDayTime ? '☀️ Día' : '🌙 Noche'}
+                        </span>
+                    </div>
                     <div className="tooltip-metrics">
                         <div className="metric-row">
                             <span className="metric-icon">🌡️</span>
@@ -112,7 +133,7 @@ const PulseClimateHealth = ({ roomId }) => {
                             </span>
                         </div>
                         <div className="metric-row">
-                            <span className="metric-icon">🌬️</span>
+                            <span className="metric-icon">☁️</span>
                             <span className="metric-label">CO2:</span>
                             <span className="metric-value">{dataPoint.co2} ppm</span>
                             <span className="metric-status" style={{ color: getMetricStatus('co2', dataPoint.co2).color }}>
@@ -121,7 +142,7 @@ const PulseClimateHealth = ({ roomId }) => {
                         </div>
                         <div className="metric-row">
                             <span className="metric-icon">💡</span>
-                            <span className="metric-label">PPFD:</span>
+                            <span className="metric-label">Luz:</span>
                             <span className="metric-value">{dataPoint.ppfd} µmol</span>
                             <span className="metric-status" style={{ color: getMetricStatus('ppfd', dataPoint.ppfd).color }}>
                                 {getMetricStatus('ppfd', dataPoint.ppfd).status}
@@ -133,6 +154,13 @@ const PulseClimateHealth = ({ roomId }) => {
         }
         return null;
     };
+
+    // Check if any metric exceeds critical thresholds
+    const hasHighCO2 = evolutionData.some(d => d.co2 > 1500);
+    const hasHighTemp = evolutionData.some(d => d.temp > 29);
+    const hasHighHumidity = evolutionData.some(d => d.humidity > 60);
+
+    const activeCount = Object.values(visibleSeries).filter(v => v).length;
 
     return (
         <div className="pulse-climate-health">
@@ -194,7 +222,7 @@ const PulseClimateHealth = ({ roomId }) => {
                     {isLightOn ? <Sun className="kpi-icon light-on" size={24} /> : <Moon className="kpi-icon light-off" size={24} />}
                     <div className="kpi-content">
                         <div className="kpi-value">{realTime.ppfd} µmol</div>
-                        <div className="kpi-subtitle">PPFD {isLightOn ? '(Día)' : '(Noche)'}</div>
+                        <div className="kpi-subtitle">PPFD</div>
                     </div>
                 </div>
             </div>
@@ -244,77 +272,128 @@ const PulseClimateHealth = ({ roomId }) => {
                 </div>
             </div>
 
-            {/* 3. MASTER ENVIRONMENT CHART */}
-            <div className="master-environment-chart">
+            {/* 3. MASTER CORRELATION CHART */}
+            <div className="correlation-chart-container">
                 <div className="section-header">
-                    <h3>Master Environment (24h) - {selectedDate}</h3>
-                    <div className="series-toggles">
+                    <h3>Diagnóstico Ambiental (24h) - {selectedDate}</h3>
+                    <div className="metric-selector">
                         <button
-                            className={`toggle-btn ${visibleSeries.temp ? 'active temp' : ''}`}
+                            className={`metric-pill ${visibleSeries.temp ? 'active temp' : ''}`}
                             onClick={() => toggleSeries('temp')}
                         >
-                            {visibleSeries.temp ? '☑' : '☐'} Temp
+                            🌡️ Temp
                         </button>
                         <button
-                            className={`toggle-btn ${visibleSeries.humidity ? 'active humidity' : ''}`}
+                            className={`metric-pill ${visibleSeries.humidity ? 'active humidity' : ''}`}
                             onClick={() => toggleSeries('humidity')}
                         >
-                            {visibleSeries.humidity ? '☑' : '☐'} Humedad
+                            💧 Humedad
                         </button>
                         <button
-                            className={`toggle-btn ${visibleSeries.vpd ? 'active vpd' : ''}`}
+                            className={`metric-pill ${visibleSeries.vpd ? 'active vpd' : ''}`}
                             onClick={() => toggleSeries('vpd')}
                         >
-                            {visibleSeries.vpd ? '☑' : '☐'} VPD
+                            🌫️ VPD
                         </button>
                         <button
-                            className={`toggle-btn ${visibleSeries.co2 ? 'active co2' : ''}`}
-                            onClick={() => toggleSeries('co2')}
-                        >
-                            {visibleSeries.co2 ? '☑' : '☐'} CO2
-                        </button>
-                        <button
-                            className={`toggle-btn ${visibleSeries.ppfd ? 'active ppfd' : ''}`}
+                            className={`metric-pill ${visibleSeries.ppfd ? 'active ppfd' : ''}`}
                             onClick={() => toggleSeries('ppfd')}
                         >
-                            {visibleSeries.ppfd ? '☑' : '☐'} PPFD
+                            💡 PPFD
+                        </button>
+                        <button
+                            className={`metric-pill ${visibleSeries.co2 ? 'active co2' : ''}`}
+                            onClick={() => toggleSeries('co2')}
+                        >
+                            ☁️ CO2
                         </button>
                     </div>
                 </div>
 
-                <div className="master-chart-container">
+                {activeCount < 3 && (
+                    <div className="selection-hint">
+                        <AlertCircle size={14} />
+                        <span>Selecciona hasta 3 métricas para correlacionar ({activeCount}/3)</span>
+                    </div>
+                )}
+
+                {/* Day/Night Legend */}
+                <div className="day-night-legend">
+                    <div className="legend-item-cycle">
+                        <div className="legend-box day"></div>
+                        <span>☀️ Día (08:00 - 20:00)</span>
+                    </div>
+                    <div className="legend-item-cycle">
+                        <div className="legend-box night"></div>
+                        <span>🌙 Noche (20:00 - 08:00)</span>
+                    </div>
+                </div>
+
+                <div className="correlation-chart">
                     <ResponsiveContainer width="100%" height={450}>
                         <LineChart data={evolutionData} margin={{ top: 20, right: 70, left: 20, bottom: 20 }}>
                             <defs>
                                 <linearGradient id="ppfdGradient" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#fbbf24" stopOpacity={0.4} />
-                                    <stop offset="95%" stopColor="#fbbf24" stopOpacity={0} />
+                                    <stop offset="5%" stopColor="#facc15" stopOpacity={0.4} />
+                                    <stop offset="95%" stopColor="#facc15" stopOpacity={0} />
                                 </linearGradient>
                             </defs>
+
+                            {/* Day/Night Background Zones - Enhanced Visibility */}
+                            <ReferenceArea
+                                x1="00:00"
+                                x2="08:00"
+                                fill="#1e3a8a"
+                                fillOpacity={0.25}
+                            />
+                            <ReferenceArea
+                                x1="08:00"
+                                x2="20:00"
+                                fill="#fbbf24"
+                                fillOpacity={0.15}
+                            />
+                            <ReferenceArea
+                                x1="20:00"
+                                x2="23:00"
+                                fill="#1e3a8a"
+                                fillOpacity={0.25}
+                            />
+
+                            {/* Critical Threshold Lines */}
+                            {visibleSeries.co2 && hasHighCO2 && (
+                                <ReferenceLine
+                                    y={1500}
+                                    yAxisId="right"
+                                    stroke="#ef4444"
+                                    strokeDasharray="5 5"
+                                    strokeWidth={2}
+                                    label={{ value: 'CO2 Crítico (1500ppm)', position: 'right', fill: '#ef4444', fontSize: 10 }}
+                                />
+                            )}
+
+                            {visibleSeries.temp && hasHighTemp && (
+                                <ReferenceLine
+                                    y={29}
+                                    yAxisId="left"
+                                    stroke="#ef4444"
+                                    strokeDasharray="5 5"
+                                    strokeWidth={2}
+                                    label={{ value: 'Temp Crítica (29°C)', position: 'left', fill: '#ef4444', fontSize: 10 }}
+                                />
+                            )}
+
+                            {visibleSeries.humidity && hasHighHumidity && (
+                                <ReferenceLine
+                                    y={60}
+                                    yAxisId="left"
+                                    stroke="#ef4444"
+                                    strokeDasharray="5 5"
+                                    strokeWidth={2}
+                                    label={{ value: 'Hum Crítica (60%)', position: 'left', fill: '#ef4444', fontSize: 10 }}
+                                />
+                            )}
+
                             <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-
-                            {/* Alert Zones */}
-                            {visibleSeries.humidity && (
-                                <ReferenceArea
-                                    yAxisId="left"
-                                    y1={60}
-                                    y2={100}
-                                    fill="#ef4444"
-                                    fillOpacity={0.1}
-                                    label={{ value: 'Riesgo Botrytis', position: 'insideTopRight', fill: '#ef4444', fontSize: 11 }}
-                                />
-                            )}
-
-                            {visibleSeries.temp && (
-                                <ReferenceArea
-                                    yAxisId="left"
-                                    y1={29}
-                                    y2={35}
-                                    fill="#ef4444"
-                                    fillOpacity={0.08}
-                                    label={{ value: 'Pérdida Terpenos', position: 'insideTopLeft', fill: '#ef4444', fontSize: 11 }}
-                                />
-                            )}
 
                             <XAxis
                                 dataKey="time"
@@ -338,7 +417,7 @@ const PulseClimateHealth = ({ roomId }) => {
                                 label={{ value: 'CO2 (ppm) / PPFD (µmol)', angle: 90, position: 'insideRight', style: { fill: '#888', fontSize: 11 } }}
                             />
 
-                            <Tooltip content={<MasterTooltip />} />
+                            <Tooltip content={<CorrelationTooltip />} />
 
                             {/* PPFD Area (Background) */}
                             {visibleSeries.ppfd && (
@@ -346,11 +425,11 @@ const PulseClimateHealth = ({ roomId }) => {
                                     yAxisId="right"
                                     type="monotone"
                                     dataKey="ppfd"
-                                    stroke="#fbbf24"
+                                    stroke="#facc15"
                                     fill="url(#ppfdGradient)"
                                     strokeWidth={2}
-                                    strokeDasharray="5 5"
-                                    name="PPFD (µmol)"
+                                    name="Luz/PAR (µmol)"
+                                    animationDuration={800}
                                 />
                             )}
 
@@ -360,10 +439,11 @@ const PulseClimateHealth = ({ roomId }) => {
                                     yAxisId="right"
                                     type="monotone"
                                     dataKey="co2"
-                                    stroke="#94a3b8"
-                                    strokeWidth={2}
+                                    stroke="#e5e7eb"
+                                    strokeWidth={2.5}
                                     dot={false}
                                     name="CO2 (ppm)"
+                                    animationDuration={800}
                                 />
                             )}
 
@@ -373,10 +453,11 @@ const PulseClimateHealth = ({ roomId }) => {
                                     yAxisId="left"
                                     type="monotone"
                                     dataKey="temp"
-                                    stroke="#f59e0b"
+                                    stroke="#f97316"
                                     strokeWidth={3}
                                     dot={false}
                                     name="Temp (°C)"
+                                    animationDuration={800}
                                 />
                             )}
 
@@ -390,6 +471,7 @@ const PulseClimateHealth = ({ roomId }) => {
                                     strokeWidth={3}
                                     dot={false}
                                     name="Humedad (%)"
+                                    animationDuration={800}
                                 />
                             )}
 
@@ -399,10 +481,11 @@ const PulseClimateHealth = ({ roomId }) => {
                                     yAxisId="left"
                                     type="monotone"
                                     dataKey="vpd"
-                                    stroke="#10b981"
+                                    stroke="#4ade80"
                                     strokeWidth={3}
                                     dot={false}
                                     name="VPD (kPa)"
+                                    animationDuration={800}
                                 />
                             )}
                         </LineChart>
@@ -412,9 +495,8 @@ const PulseClimateHealth = ({ roomId }) => {
                 <div className="chart-insight">
                     <AlertCircle size={16} className="insight-icon" />
                     <p>
-                        <strong>Zonas de Alerta Activas:</strong> El gráfico muestra áreas sombreadas para condiciones de riesgo.
-                        Humedad &gt;60% aumenta riesgo de Botrytis. Temperatura &gt;29°C causa pérdida de terpenos.
-                        Usa los toggles para comparar métricas y detectar correlaciones.
+                        <strong>Correlación Inteligente:</strong> Las zonas sombreadas indican ciclos de luz (☀️ Día: amarillo / 🌙 Noche: azul).
+                        Las líneas rojas punteadas marcan umbrales críticos. El tooltip muestra TODAS las métricas en cada punto temporal para facilitar el análisis de correlaciones.
                     </p>
                 </div>
             </div>

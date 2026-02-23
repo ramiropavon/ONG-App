@@ -100,15 +100,15 @@ export const rooms = [
 ];
 
 export const batches = [
-  { id: 'B1', name: 'Lote #2023-10-A', roomId: 'R2', geneticsId: 'g1', plantCount: 120, startDate: '2023-10-01', phase: 'Flora', currentDay: 35, bedId: null },
-  { id: 'B2', name: 'Lote #2023-11-B', roomId: 'R3', geneticsId: 'g2', plantCount: 110, startDate: '2023-11-01', phase: 'Flora', currentDay: 5, bedId: null },
+  { id: 'B1', name: 'Lote #2026-01-A', roomId: 'R2', geneticsId: 'g1', plantCount: 120, startDate: '2026-01-15', phase: 'Flora', currentDay: 35, bedId: null },
+  { id: 'B2', name: 'Lote #2026-02-B', roomId: 'R3', geneticsId: 'g2', plantCount: 110, startDate: '2026-02-01', phase: 'Flora', currentDay: 5, bedId: null },
   {
     id: 'B_E1',
     name: 'Esquejes Avocada',
     roomId: 'R1',
     geneticsId: 'g1',
     plantCount: 50,
-    startDate: '2023-11-25',
+    startDate: '2026-01-20',
     phase: 'Enraizado',
     location: 'Incubadora 1',
     startDay: 12,
@@ -127,22 +127,126 @@ export const batches = [
     vegetativeDay: 18,
     targetVegetativeDays: 28,
     destinedFor: 'R2',
-    readyDate: '2024-03-14',
+    readyDate: '2026-03-14',
     bedId: 'V_B2'
   },
 ];
 
 export const inventory = [
-  { id: 'i1', product: 'Athena Pro Bloom', type: 'Nutrientes', quantityMl: 2500, dailyUsageMl: 150, minAlertMl: 1000 },
-  { id: 'i2', product: 'Athena Pro Core', type: 'Nutrientes', quantityMl: 800, dailyUsageMl: 120, minAlertMl: 1000 },
-  { id: 'i3', product: 'Coco Substrate (50L)', type: 'Sustrato', quantityMl: 10, dailyUsageMl: 0.5, minAlertMl: 5 },
-  { id: 'i4', product: 'pH Down', type: 'Reguladores', quantityMl: 300, dailyUsageMl: 15, minAlertMl: 500 },
+  // Nutrientes
+  { id: 'i1', product: 'Athena Pro Bloom', category: 'Nutrientes', quantityMl: 2500, maxCapacityMl: 5000, dailyUsageMl: 150, minAlertMl: 1000, unitCostPerMl: 0.08 },
+  { id: 'i2', product: 'Athena Pro Core', category: 'Nutrientes', quantityMl: 800, maxCapacityMl: 5000, dailyUsageMl: 120, minAlertMl: 1000, unitCostPerMl: 0.07 },
+  { id: 'i3', product: 'CalMag Pro', category: 'Nutrientes', quantityMl: 1500, maxCapacityMl: 3000, dailyUsageMl: 80, minAlertMl: 500, unitCostPerMl: 0.05 },
+  { id: 'i4', product: 'PK Booster 13/14', category: 'Nutrientes', quantityMl: 900, maxCapacityMl: 2000, dailyUsageMl: 60, minAlertMl: 400, unitCostPerMl: 0.12 },
+
+  // Reguladores
+  { id: 'i5', product: 'pH Down (Ácido Fosfórico)', category: 'Reguladores', quantityMl: 300, maxCapacityMl: 1000, dailyUsageMl: 15, minAlertMl: 200, unitCostPerMl: 0.03 },
+  { id: 'i6', product: 'pH Up (Hidróxido de Potasio)', category: 'Reguladores', quantityMl: 450, maxCapacityMl: 1000, dailyUsageMl: 10, minAlertMl: 200, unitCostPerMl: 0.03 },
+
+  // Sustrato
+  { id: 'i7', product: 'Coco Coir Premium (50L)', category: 'Sustrato', quantityMl: 150000, maxCapacityMl: 300000, dailyUsageMl: 0, minAlertMl: 100000, unitCostPerMl: 0.0008 },
+  { id: 'i8', product: 'Perlita (25L)', category: 'Sustrato', quantityMl: 50000, maxCapacityMl: 100000, dailyUsageMl: 0, minAlertMl: 25000, unitCostPerMl: 0.0005 },
+
+  // IPM/Plagas
+  { id: 'i9', product: 'Neem Oil Concentrado', category: 'IPM', quantityMl: 800, maxCapacityMl: 2000, dailyUsageMl: 25, minAlertMl: 400, unitCostPerMl: 0.06 },
+  { id: 'i10', product: 'Jabón Potásico', category: 'IPM', quantityMl: 1200, maxCapacityMl: 3000, dailyUsageMl: 30, minAlertMl: 600, unitCostPerMl: 0.04 },
+  { id: 'i11', product: 'Bacillus Thuringiensis', category: 'IPM', quantityMl: 500, maxCapacityMl: 1000, dailyUsageMl: 20, minAlertMl: 300, unitCostPerMl: 0.15 },
+
+  // Herramientas (medido en unidades, convertido a ml para consistencia)
+  { id: 'i12', product: 'Macetas 11L (unidades)', category: 'Herramientas', quantityMl: 50, maxCapacityMl: 200, dailyUsageMl: 0, minAlertMl: 20, unitCostPerMl: 2.5 },
+  { id: 'i13', product: 'Malla Tutora (metros)', category: 'Herramientas', quantityMl: 150, maxCapacityMl: 500, dailyUsageMl: 0, minAlertMl: 50, unitCostPerMl: 0.8 },
 ];
 
 export const tasks = [
-  { id: 'T1', batchId: 'B1', task: 'Defoliación día 42', scheduledDate: '2023-11-12', status: 'Pending' },
-  { id: 'T2', batchId: 'B2', task: 'Entutorado', scheduledDate: '2023-11-08', status: 'Pending' },
-  { id: 'T3', batchId: 'B3', task: 'Limpieza de filtros', scheduledDate: '2023-11-06', status: 'Done' }
+  {
+    id: 'T1',
+    batchId: 'B1',
+    roomId: 'R2',
+    task: 'Defoliación día 42',
+    scheduledDate: '2026-02-12',
+    status: 'Pending',
+    type: 'Manejo',
+    sopCode: 'SOP-12',
+    assignedTo: 'Admin',
+    checklist: [
+      'Preparar herramientas esterilizadas',
+      'Remover hojas inferiores (lollipopping)',
+      'Eliminar hojas grandes que bloquean luz',
+      'Descartar material vegetal correctamente',
+      'Limpiar herramientas post-uso'
+    ]
+  },
+  {
+    id: 'T2',
+    batchId: 'B2',
+    roomId: 'R3',
+    task: 'Entutorado',
+    scheduledDate: '2026-02-08',
+    status: 'Pending',
+    type: 'Manejo',
+    sopCode: 'SOP-08',
+    assignedTo: 'Admin',
+    checklist: [
+      'Instalar malla tutora a 30cm del canopy',
+      'Distribuir ramas uniformemente',
+      'Asegurar puntos de crecimiento hacia arriba',
+      'Verificar tensión de la malla'
+    ]
+  },
+  {
+    id: 'T3',
+    batchId: null,
+    roomId: 'R1',
+    task: 'Limpieza de Sala Vege',
+    scheduledDate: '2026-02-15',
+    status: 'Done',
+    type: 'Operativo',
+    sopCode: 'SOP-04',
+    assignedTo: 'Admin',
+    checklist: [
+      'Desconectar equipos eléctricos',
+      'Limpiar paredes con solución desinfectante',
+      'Limpiar sistema de ventilación',
+      'Limpiar bandejas y macetas',
+      'Verificar funcionamiento de equipos'
+    ]
+  },
+  {
+    id: 'T4',
+    batchId: 'B1',
+    roomId: 'R2',
+    task: 'Aplicación Preventiva IPM',
+    scheduledDate: '2026-02-10',
+    status: 'Pending',
+    type: 'IPM',
+    sopCode: 'SOP-15',
+    assignedTo: 'Admin',
+    checklist: [
+      'Preparar solución de Neem Oil (2ml/L)',
+      'Aplicar en horas de luz apagada',
+      'Cubrir envés de hojas',
+      'Registrar aplicación en bitácora',
+      'Limpiar equipo de aspersión'
+    ]
+  },
+  {
+    id: 'T5',
+    batchId: 'B1',
+    roomId: 'R2',
+    task: 'Flush Pre-Cosecha',
+    scheduledDate: '2026-02-20',
+    status: 'Pending',
+    type: 'Riego',
+    sopCode: 'SOP-18',
+    assignedTo: 'Admin',
+    checklist: [
+      'Preparar agua pH 6.0',
+      'Regar con 3x volumen de maceta',
+      'Medir EC de runoff (objetivo <0.5)',
+      'Verificar drenaje correcto',
+      'Documentar lecturas'
+    ]
+  }
 ];
 
 export const sensorHistory = [

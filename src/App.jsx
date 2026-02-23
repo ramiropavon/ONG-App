@@ -7,20 +7,29 @@ import Planner from './components/Planner';
 import VegePipeline from './components/VegePipeline';
 import NurseryDetails from './components/NurseryDetails';
 import VegeDetails from './components/VegeDetails';
+import Settings from './components/Settings/Settings';
 import './index.css';
 
 function App() {
   const [currentView, setCurrentView] = useState('dashboard');
   const [selectedRoomId, setSelectedRoomId] = useState(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
   const navigateTo = (view, roomId = null) => {
     setCurrentView(view);
     if (roomId) setSelectedRoomId(roomId);
+    setIsSidebarOpen(false); // Close sidebar on navigation (mobile)
   };
 
   return (
-    <div className="app-container">
-      <Sidebar currentView={currentView} navigateTo={navigateTo} />
+    <div className={`app-container ${isSidebarOpen ? 'sidebar-open' : ''}`}>
+      <Sidebar
+        currentView={currentView}
+        navigateTo={navigateTo}
+        isOpen={isSidebarOpen}
+        toggleSidebar={toggleSidebar}
+      />
       <main className="main-content">
         {currentView === 'dashboard' && <Dashboard navigateTo={navigateTo} />}
         {currentView === 'room' && <RoomDetail roomId={selectedRoomId} />}
@@ -37,6 +46,7 @@ function App() {
         )}
         {currentView === 'inventory' && <Inventory />}
         {currentView === 'planner' && <Planner />}
+        {currentView === 'settings' && <Settings />}
       </main>
     </div>
   );

@@ -1,0 +1,409 @@
+.settings-container {
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    height: 100%;
+}
+
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.settings-header .page-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.settings-header .title-icon {
+    color: var(--accent-primary);
+}
+
+.settings-content {
+    display: flex;
+    gap: 2rem;
+    height: calc(100vh - 180px);
+}
+
+.profiles-sidebar {
+    width: 300px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.sidebar-title {
+    padding: 1.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.profiles-list {
+    list-style: none;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.profile-item {
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.profile-item:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.profile-item.active {
+    background: rgba(46, 204, 113, 0.1);
+    border-left: 4px solid var(--accent-primary);
+}
+
+.profile-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.profile-item-name {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.profile-item-phases {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+}
+
+.profile-editor {
+    flex: 1;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    overflow-y: auto;
+    position: relative;
+}
+
+.profile-view {
+    padding: 2rem;
+}
+
+.profile-view-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.profile-view-header h2 {
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.profile-view-header p {
+    color: var(--text-secondary);
+    max-width: 600px;
+}
+
+.profile-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.btn-danger-outline {
+    background: transparent;
+    border: 1px solid rgba(231, 76, 60, 0.5);
+    color: #e74c3c;
+    padding: 0.5rem;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-danger-outline:hover {
+    background: rgba(231, 76, 60, 0.1);
+    border-color: #e74c3c;
+}
+
+.phases-list-preview h3 {
+    margin-bottom: 1.5rem;
+    color: var(--text-primary);
+}
+
+.phases-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.phase-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.phase-card-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.phase-card-header h4 {
+    font-size: 1rem;
+    margin: 0;
+}
+
+.phase-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+}
+
+.phase-clone { background: rgba(52, 152, 219, 0.2); color: #3498db; }
+.phase-vege { background: rgba(46, 204, 113, 0.2); color: #2ecc71; }
+.phase-flora { background: rgba(155, 89, 182, 0.2); color: #9b59b6; }
+
+.phase-card-body {
+    padding: 1.25rem;
+}
+
+.phase-weeks {
+    font-size: 0.85rem;
+    color: var(--accent-tertiary);
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+
+.phase-metrics-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.metric-pill {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.phase-strategy {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    padding-top: 1rem;
+    border-top: 1px dashed var(--border-color);
+}
+
+.phase-strategy strong {
+    color: var(--text-primary);
+}
+
+.empty-selection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-tertiary);
+    gap: 1rem;
+}
+
+/* Form Styles */
+.profile-form {
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1.5rem;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.form-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.form-section h3 {
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-row {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.form-row .form-group {
+    flex: 1;
+}
+
+.form-group label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.form-input, .form-select, .form-textarea {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    font-family: inherit;
+    font-size: 0.9rem;
+    transition: border-color 0.2s;
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.phases-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.phases-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.phase-edit-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.phase-edit-header {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    cursor: pointer;
+}
+
+.phase-edit-title {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.phase-edit-body {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.metric-group {
+    background: rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+}
+
+.metric-group h5 {
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.min-max-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.min-max-grid .form-group label {
+    font-size: 0.7rem;
+    text-align: center;
+}
+
+.min-max-grid .form-input {
+    padding: 0.5rem;
+    text-align: center;
+}
+
+.target-input {
+    border-color: rgba(46, 204, 113, 0.5) !important;
+    background: rgba(46, 204, 113, 0.05) !important;
+}
+
+@media (max-width: 1024px) {
+    .settings-content {
+        flex-direction: column;
+    }
+    .profiles-sidebar {
+        width: 100%;
+        height: 250px;
+    }
+}
