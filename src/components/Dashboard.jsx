@@ -3,6 +3,7 @@ import {
     Calendar, Flower, Sprout, Zap, Activity, Droplets, Thermometer, Wind
 } from 'lucide-react';
 import { rooms, batches, tasks, genetics } from '../data/mockData';
+import PulseWidget from './PulseWidget';
 import './Dashboard.css';
 
 const Dashboard = ({ navigateTo }) => {
@@ -125,6 +126,8 @@ const Dashboard = ({ navigateTo }) => {
                     </div>
                 </div>
             </header>
+
+            <PulseWidget />
 
             {/* NEW KPI Grid */}
             <div className="kpi-grid">

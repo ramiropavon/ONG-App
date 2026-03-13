@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
-import { Thermometer, Droplets, Activity, Wind, Sun, Moon, AlertCircle, Calendar } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, BarChart, Bar, LineChart, Line, ReferenceArea, ReferenceLine } from 'recharts';
-import { pulseRealTime, pulseDayNightTemp, pulseDetailedEvolution } from '../data/mockData';
+import React, { useState, useMemo } from 'react';
+import { Thermometer, Droplets, Activity, Wind, Sun, Moon, AlertCircle, Calendar, Zap } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line, ReferenceArea, ReferenceLine, ComposedChart } from 'recharts';
+import { pulseRealTime, pulseDayNightTemp, pulseDetailedEvolution, rooms } from '../data/mockData';
 import './PulseClimateHealth.css';
 
 const PulseClimateHealth = ({ roomId }) => {
     const [selectedDate, setSelectedDate] = useState('2026-02-07');
+    const [difSelectedDay, setDifSelectedDay] = useState(6); // index, default=today (last)
+    const [difViewMode, setDifViewMode] = useState('day'); // 'day' or 'week'
     const [visibleSeries, setVisibleSeries] = useState({
         temp: true,
         humidity: false,
@@ -17,14 +19,46 @@ const PulseClimateHealth = ({ roomId }) => {
     const realTime = pulseRealTime[roomId] || pulseRealTime.R2;
     const dayNightData = pulseDayNightTemp[roomId] || pulseDayNightTemp.R2;
     const evolutionData = pulseDetailedEvolution[roomId] || pulseDetailedEvolution.R2;
+    const room = rooms.find(r => r.id === roomId);
 
     // Light schedule (8:00 - 20:00 = Day)
     const lightOnHour = 8;
     const lightOffHour = 20;
+    const photoperiod = room?.photoperiod || 12;
 
-    // Calculate DIF logic
-    const lastDayData = dayNightData[dayNightData.length - 1];
-    const dif = lastDayData.tempDay - lastDayData.tempNight;
+    // DLI Calculation: PPFD × seconds of light / 1,000,000
+    const dli = useMemo(() => {
+        const ppfd = realTime.ppfd || 0;
+        return ((ppfd * 3600 * photoperiod) / 1000000).toFixed(1);
+    }, [realTime.ppfd, photoperiod]);
+
+    const dliTarget = { min: 35, max: 45 }; // Flora targets
+    const dliInRange = parseFloat(dli) >= dliTarget.min && parseFloat(dli) <= dliTarget.max;
+
+    // Calculate DIF for each day + enriched data
+    const difTableData = useMemo(() => {
+        return dayNightData.map(d => {
+            const dayDif = d.tempDay - d.tempNight;
+            let status, color, icon, statusLabel;
+            if (dayDif > 0) {
+                status = 'stretch'; color = '#ef4444'; icon = '⚠️'; statusLabel = 'Estiramiento';
+            } else if (dayDif <= -5) {
+                status = 'purple'; color = '#a78bfa'; icon = '❄️'; statusLabel = 'Purple Boost';
+            } else if (dayDif < 0) {
+                status = 'ok'; color = '#10b981'; icon = '✅'; statusLabel = 'Óptimo';
+            } else {
+                status = 'neutral'; color = '#94a3b8'; icon = '◎'; statusLabel = 'Neutro';
+            }
+            return { ...d, dif: dayDif, status, color, icon, statusLabel };
+        });
+    }, [dayNightData]);
+
+    // Selected day data for detail view
+    const selectedDayData = difTableData[difSelectedDay] || difTableData[difTableData.length - 1];
+
+    // Last day DIF for summary badge
+    const lastDayData = difTableData[difTableData.length - 1];
+    const dif = lastDayData.dif;
 
     let difStatus = 'neutral';
     let difMessage = 'Crecimiento Neutro';
@@ -38,13 +72,33 @@ const PulseClimateHealth = ({ roomId }) => {
     }
 
     // VPD Status
-    const vpdInRange = realTime.vpd >= 1.2 && realTime.vpd <= 1.5;
+    const vpdInRange = realTime.vpd >= 1.0 && realTime.vpd <= 1.5;
 
-    // CO2 Alert
-    const co2Low = realTime.co2 < 350;
+    // CO2 Status — indoor cannabis needs 800-1200+ ppm during lights on
+    const co2Target = { min: 800, max: 1200 };
+    const co2Low = realTime.co2 < co2Target.min;
+    const co2Status = realTime.co2 < 500 ? 'danger' : realTime.co2 < co2Target.min ? 'warning' : realTime.co2 > 1500 ? 'danger' : 'ok';
+
+    // Temp Status
+    const tempTarget = { min: 24, max: 28 };
+    const tempStatus = realTime.temp >= tempTarget.min && realTime.temp <= tempTarget.max ? 'ok' : realTime.temp > 29 ? 'danger' : 'warning';
+
+    // Humidity Status
+    const humTarget = { min: 45, max: 55 };
+    const humStatus = realTime.humidity >= humTarget.min && realTime.humidity <= humTarget.max ? 'ok' : realTime.humidity > 60 ? 'danger' : 'warning';
+
+    // PPFD Status
+    const ppfdTarget = { min: 800, max: 1100 };
+    const ppfdInRange = realTime.ppfd >= ppfdTarget.min && realTime.ppfd <= ppfdTarget.max;
 
     // Current light status (based on PPFD)
     const isLightOn = realTime.ppfd > 0;
+
+    // Weekly DIF average
+    const avgDif = useMemo(() => {
+        const sum = difTableData.reduce((acc, d) => acc + d.dif, 0);
+        return (sum / difTableData.length).toFixed(1);
+    }, [difTableData]);
 
     // Toggle series visibility (max 3 at a time)
     const toggleSeries = (series) => {
@@ -88,6 +142,26 @@ const PulseClimateHealth = ({ roomId }) => {
             default:
                 return { status: '', color: '#94a3b8' };
         }
+    };
+
+    // DIF Tooltip for 24h chart
+    const DifDayTooltip = ({ active, payload, label }) => {
+        if (active && payload && payload.length > 0) {
+            const point = payload[0]?.payload;
+            if (!point) return null;
+            return (
+                <div className="dif-day-tooltip">
+                    <div className="dif-day-tooltip-header">
+                        <span>{label}</span>
+                        <span className={point.isDay ? 'dif-tt-day' : 'dif-tt-night'}>
+                            {point.isDay ? '☀️ Luces ON' : '🌙 Luces OFF'}
+                        </span>
+                    </div>
+                    <div className="dif-day-tooltip-value">{point.temp}°C</div>
+                </div>
+            );
+        }
+        return null;
     };
 
     // Enhanced Tooltip showing ALL metrics
@@ -162,6 +236,12 @@ const PulseClimateHealth = ({ roomId }) => {
 
     const activeCount = Object.values(visibleSeries).filter(v => v).length;
 
+    // DIF gauge angle (-10 to +10 mapped to -90 to +90 degrees)
+    const difGaugeAngle = useMemo(() => {
+        const clampedDif = Math.max(-10, Math.min(10, selectedDayData.dif));
+        return (clampedDif / 10) * 90;
+    }, [selectedDayData]);
+
     return (
         <div className="pulse-climate-health">
             {/* PULSE STATUS & DATE FILTER */}
@@ -184,90 +264,278 @@ const PulseClimateHealth = ({ roomId }) => {
 
             {/* 1. HEADER: PULSE REAL-TIME STRIP */}
             <div className="pulse-realtime-strip">
-                <div className="kpi-card-pulse">
-                    <Thermometer className="kpi-icon" size={24} />
+                <div className={`kpi-card-pulse kpi-${tempStatus}`}>
+                    <Thermometer className={`kpi-icon ${tempStatus === 'ok' ? 'status-ok' : tempStatus === 'danger' ? 'status-alert' : 'status-warn'}`} size={24} />
                     <div className="kpi-content">
                         <div className="kpi-value">{realTime.temp}°C</div>
-                        <div className="kpi-subtitle">Max ayer: {realTime.tempMaxYesterday}°C</div>
+                        <div className="kpi-subtitle">Temperatura</div>
+                        <div className="kpi-target">Target: {tempTarget.min}-{tempTarget.max}°C</div>
                     </div>
                 </div>
 
-                <div className="kpi-card-pulse">
-                    <Droplets className={`kpi-icon ${realTime.humidity >= 45 && realTime.humidity <= 60 ? 'status-ok' : 'status-alert'}`} size={24} />
+                <div className={`kpi-card-pulse kpi-${humStatus}`}>
+                    <Droplets className={`kpi-icon ${humStatus === 'ok' ? 'status-ok' : 'status-alert'}`} size={24} />
                     <div className="kpi-content">
                         <div className="kpi-value">{realTime.humidity}%</div>
                         <div className="kpi-subtitle">Humedad</div>
+                        <div className="kpi-target">Target: {humTarget.min}-{humTarget.max}%</div>
                     </div>
                 </div>
 
-                <div className="kpi-card-pulse vpd-critical">
-                    <Activity className={`kpi-icon ${vpdInRange ? 'status-optimal' : ''}`} size={24} />
+                <div className={`kpi-card-pulse kpi-${vpdInRange ? 'ok' : 'warning'}`}>
+                    <Activity className={`kpi-icon ${vpdInRange ? 'status-optimal' : 'status-warn'}`} size={24} />
                     <div className="kpi-content">
                         <div className={`kpi-value ${vpdInRange ? 'vpd-optimal' : ''}`}>{realTime.vpd} kPa</div>
-                        <div className="kpi-subtitle">VPD (Pulse)</div>
+                        <div className="kpi-subtitle">VPD</div>
+                        <div className="kpi-target">Target: 1.0-1.5 kPa</div>
                     </div>
                 </div>
 
-                <div className="kpi-card-pulse">
-                    <Wind className={`kpi-icon ${co2Low ? 'status-alert' : ''}`} size={24} />
+                <div className={`kpi-card-pulse kpi-${co2Status}`}>
+                    <Wind className={`kpi-icon ${co2Status === 'ok' ? 'status-ok' : co2Status === 'danger' ? 'status-alert' : 'status-warn'}`} size={24} />
                     <div className="kpi-content">
                         <div className="kpi-value">{realTime.co2} ppm</div>
                         <div className="kpi-subtitle">
-                            {co2Low ? '⚠ Aire Viciado' : 'CO2 Ambiente'}
+                            {co2Status === 'danger' ? '⚠ Nivel Crítico' : co2Status === 'warning' ? '⚠ Bajo para Indoor' : 'CO2 Óptimo'}
                         </div>
+                        <div className="kpi-target">Target: {co2Target.min}-{co2Target.max} ppm</div>
                     </div>
                 </div>
 
-                <div className="kpi-card-pulse">
-                    {isLightOn ? <Sun className="kpi-icon light-on" size={24} /> : <Moon className="kpi-icon light-off" size={24} />}
+                <div className={`kpi-card-pulse kpi-${ppfdInRange ? 'ok' : 'warning'}`}>
+                    {isLightOn ? <Sun className={`kpi-icon ${ppfdInRange ? 'light-on' : 'status-warn'}`} size={24} /> : <Moon className="kpi-icon light-off" size={24} />}
                     <div className="kpi-content">
                         <div className="kpi-value">{realTime.ppfd} µmol</div>
                         <div className="kpi-subtitle">PPFD</div>
+                        <div className="kpi-target">Target: {ppfdTarget.min}-{ppfdTarget.max} µmol</div>
+                    </div>
+                </div>
+
+                <div className={`kpi-card-pulse kpi-${dliInRange ? 'ok' : 'warning'}`}>
+                    <Zap className={`kpi-icon ${dliInRange ? 'status-ok' : 'status-warn'}`} size={24} />
+                    <div className="kpi-content">
+                        <div className="kpi-value">{dli}</div>
+                        <div className="kpi-subtitle">DLI (mol/m²/día)</div>
+                        <div className="kpi-target">Target: {dliTarget.min}-{dliTarget.max}</div>
                     </div>
                 </div>
             </div>
 
-            {/* 2. MORFOLOGÍA & ESTRÉS (DIF) */}
+            {/* 2. DIFERENCIAL TÉRMICO (DIF) — Redesigned */}
             <div className="dif-morphology-section">
+                {/* Header with view toggle */}
                 <div className="section-header">
-                    <h3>Morfología & Estrés (DIF)</h3>
-                    <span className={`dif-badge ${difStatus}`}>{difMessage}</span>
-                </div>
-
-                <div className="dif-chart-container">
-                    <ResponsiveContainer width="100%" height={280}>
-                        <BarChart data={dayNightData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                            <XAxis dataKey="day" stroke="#888" />
-                            <YAxis stroke="#888" domain={[15, 30]} />
-                            <Tooltip
-                                contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #444', borderRadius: '8px' }}
-                                labelStyle={{ color: '#fff', fontWeight: 'bold' }}
-                            />
-                            <Bar dataKey="tempDay" fill="#f59e0b" name="Temp Día" radius={[8, 8, 0, 0]} />
-                            <Bar dataKey="tempNight" fill="#6366f1" name="Temp Noche" radius={[8, 8, 0, 0]} />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
-
-                <div className="dif-explanation">
-                    <div className="dif-info-card">
-                        <span className="dif-label">DIF Actual:</span>
-                        <span className={`dif-value ${difStatus}`}>{dif > 0 ? '+' : ''}{dif.toFixed(1)}°C</span>
+                    <h3>
+                        <Thermometer size={18} style={{ marginRight: 8, verticalAlign: 'middle' }} />
+                        Diferencial Térmico (DIF)
+                    </h3>
+                    <div className="dif-view-controls">
+                        <button
+                            className={`dif-view-btn ${difViewMode === 'day' ? 'active' : ''}`}
+                            onClick={() => setDifViewMode('day')}
+                        >
+                            <Sun size={14} /> Vista Día
+                        </button>
+                        <button
+                            className={`dif-view-btn ${difViewMode === 'week' ? 'active' : ''}`}
+                            onClick={() => setDifViewMode('week')}
+                        >
+                            <Calendar size={14} /> Semana
+                        </button>
+                        <span className={`dif-badge ${difStatus}`}>{difMessage}</span>
                     </div>
-                    <div className="dif-guide">
-                        <div className="guide-item">
-                            <span className="guide-icon purple">❄️</span>
-                            <span>DIF &lt; -5°C: Purple Boost / Resina</span>
+                </div>
+
+                {/* Day Selector Pills */}
+                <div className="dif-day-selector">
+                    {difTableData.map((d, idx) => {
+                        const isSelected = idx === difSelectedDay;
+                        const isToday = idx === difTableData.length - 1;
+                        return (
+                            <button
+                                key={idx}
+                                className={`dif-day-pill ${isSelected ? 'selected' : ''} ${isToday ? 'is-today' : ''}`}
+                                onClick={() => { setDifSelectedDay(idx); setDifViewMode('day'); }}
+                                style={{ '--pill-accent': d.color }}
+                            >
+                                <span className="dif-pill-day">{d.day}</span>
+                                <span className="dif-pill-date">{d.date?.slice(5)}</span>
+                                <span className="dif-pill-dif" style={{ color: d.color }}>
+                                    {d.dif > 0 ? '+' : ''}{d.dif.toFixed(1)}°
+                                </span>
+                                <span className="dif-pill-icon">{d.icon}</span>
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {/* === DAY DETAIL VIEW === */}
+                {difViewMode === 'day' && (
+                    <div className="dif-day-detail">
+                        {/* Top: Summary Cards */}
+                        <div className="dif-summary-cards">
+                            <div className="dif-summary-card dif-card-day">
+                                <Sun size={20} className="dif-card-icon sun" />
+                                <div className="dif-card-info">
+                                    <span className="dif-card-label">Temp. Diurna</span>
+                                    <span className="dif-card-value">{selectedDayData.tempDay}°C</span>
+                                </div>
+                                <div className="dif-card-bar-wrap">
+                                    <div className="dif-card-bar" style={{ width: `${((selectedDayData.tempDay - 15) / 20) * 100}%`, background: 'linear-gradient(90deg, #f59e0b, #f97316)' }} />
+                                </div>
+                            </div>
+                            <div className="dif-summary-card dif-card-night">
+                                <Moon size={20} className="dif-card-icon moon" />
+                                <div className="dif-card-info">
+                                    <span className="dif-card-label">Temp. Nocturna</span>
+                                    <span className="dif-card-value">{selectedDayData.tempNight}°C</span>
+                                </div>
+                                <div className="dif-card-bar-wrap">
+                                    <div className="dif-card-bar" style={{ width: `${((selectedDayData.tempNight - 15) / 20) * 100}%`, background: 'linear-gradient(90deg, #6366f1, #818cf8)' }} />
+                                </div>
+                            </div>
+                            <div className={`dif-summary-card dif-card-result dif-card-${selectedDayData.status}`}>
+                                <Activity size={20} className="dif-card-icon" />
+                                <div className="dif-card-info">
+                                    <span className="dif-card-label">DIF Resultante</span>
+                                    <span className="dif-card-value" style={{ color: selectedDayData.color }}>
+                                        {selectedDayData.dif > 0 ? '+' : ''}{selectedDayData.dif.toFixed(1)}°C
+                                    </span>
+                                </div>
+                                <span className="dif-card-status" style={{ color: selectedDayData.color }}>
+                                    {selectedDayData.statusLabel}
+                                </span>
+                            </div>
                         </div>
-                        <div className="guide-item">
-                            <span className="guide-icon neutral">◎</span>
-                            <span>DIF ≈ 0°C: Crecimiento Neutro</span>
+
+                        {/* 24h Temperature Curve */}
+                        <div className="dif-24h-chart">
+                            <div className="dif-chart-title">
+                                Curva térmica 24h — {selectedDayData.day} {selectedDayData.date}
+                            </div>
+                            <ResponsiveContainer width="100%" height={280}>
+                                <AreaChart data={selectedDayData.hourly || []} margin={{ top: 10, right: 30, left: 10, bottom: 10 }}>
+                                    <defs>
+                                        <linearGradient id="tempDayGrad" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#f97316" stopOpacity={0.6} />
+                                            <stop offset="95%" stopColor="#f97316" stopOpacity={0.05} />
+                                        </linearGradient>
+                                    </defs>
+
+                                    {/* Night zones background */}
+                                    <ReferenceArea x1="00:00" x2="08:00" fill="#1e3a8a" fillOpacity={0.2} />
+                                    <ReferenceArea x1="20:00" x2="23:00" fill="#1e3a8a" fillOpacity={0.2} />
+                                    <ReferenceArea x1="08:00" x2="20:00" fill="#fbbf24" fillOpacity={0.08} />
+
+                                    {/* Day/Night temp reference lines */}
+                                    <ReferenceLine y={selectedDayData.tempDay} stroke="#f97316" strokeDasharray="5 5" strokeWidth={1.5}
+                                        label={{ value: `☀ ${selectedDayData.tempDay}°C`, position: 'right', fill: '#f97316', fontSize: 11 }} />
+                                    <ReferenceLine y={selectedDayData.tempNight} stroke="#818cf8" strokeDasharray="5 5" strokeWidth={1.5}
+                                        label={{ value: `🌙 ${selectedDayData.tempNight}°C`, position: 'right', fill: '#818cf8', fontSize: 11 }} />
+
+                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                                    <XAxis dataKey="hour" stroke="#555" tick={{ fontSize: 11 }} interval={2} />
+                                    <YAxis
+                                        domain={[Math.floor(selectedDayData.tempNight - 2), Math.ceil(selectedDayData.tempDay + 2)]}
+                                        stroke="#555"
+                                        tick={{ fontSize: 11 }}
+                                        tickFormatter={(v) => `${v}°`}
+                                    />
+                                    <Tooltip content={<DifDayTooltip />} />
+                                    <Area
+                                        type="monotone"
+                                        dataKey="temp"
+                                        stroke="#f97316"
+                                        fill="url(#tempDayGrad)"
+                                        strokeWidth={3}
+                                        dot={false}
+                                        activeDot={{ r: 6, fill: '#f97316', stroke: '#fff', strokeWidth: 2 }}
+                                    />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                            <div className="dif-chart-legend-inline">
+                                <span><span className="dif-inline-dot" style={{ background: 'rgba(30, 58, 138, 0.5)' }} /> Noche (20:00–08:00)</span>
+                                <span><span className="dif-inline-dot" style={{ background: 'rgba(251, 191, 36, 0.3)' }} /> Día (08:00–20:00)</span>
+                                <span><span className="dif-inline-line" style={{ borderColor: '#f97316' }} /> Temp. Día</span>
+                                <span><span className="dif-inline-line" style={{ borderColor: '#818cf8' }} /> Temp. Noche</span>
+                            </div>
                         </div>
-                        <div className="guide-item">
-                            <span className="guide-icon alert">⚠</span>
-                            <span>DIF &gt; 0°C: Alerta Estiramiento</span>
+                    </div>
+                )}
+
+                {/* === WEEK OVERVIEW VIEW === */}
+                {difViewMode === 'week' && (
+                    <div className="dif-week-overview">
+                        <div className="dif-week-grid">
+                            {difTableData.map((d, idx) => {
+                                const isToday = idx === difTableData.length - 1;
+                                const absDif = Math.abs(d.dif);
+                                const barHeight = Math.min(absDif * 12, 100);
+                                return (
+                                    <div
+                                        key={idx}
+                                        className={`dif-week-card ${isToday ? 'today' : ''}`}
+                                        onClick={() => { setDifSelectedDay(idx); setDifViewMode('day'); }}
+                                    >
+                                        <div className="dif-week-card-header">
+                                            <span className="dif-week-day">{d.day}</span>
+                                            {isToday && <span className="dif-today-badge">HOY</span>}
+                                        </div>
+
+                                        {/* Temperature visual bars */}
+                                        <div className="dif-temp-visual">
+                                            <div className="dif-temp-bar-group">
+                                                <div className="dif-temp-bar day-bar" style={{ height: `${((d.tempDay - 15) / 20) * 100}%` }}>
+                                                    <span className="dif-temp-bar-label">{d.tempDay}°</span>
+                                                </div>
+                                                <div className="dif-temp-bar night-bar" style={{ height: `${((d.tempNight - 15) / 20) * 100}%` }}>
+                                                    <span className="dif-temp-bar-label">{d.tempNight}°</span>
+                                                </div>
+                                            </div>
+                                            <div className="dif-temp-labels">
+                                                <span>☀️</span>
+                                                <span>🌙</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="dif-week-dif" style={{ color: d.color }}>
+                                            <span className="dif-week-icon">{d.icon}</span>
+                                            <span>{d.dif > 0 ? '+' : ''}{d.dif.toFixed(1)}°C</span>
+                                        </div>
+                                        <div className="dif-week-status" style={{ color: d.color }}>{d.statusLabel}</div>
+                                    </div>
+                                );
+                            })}
                         </div>
+
+                        {/* Week average footer */}
+                        <div className="dif-week-footer">
+                            <div className="dif-week-avg">
+                                <span className="dif-avg-label-text">Promedio Semanal:</span>
+                                <span className="dif-avg-value" style={{ color: parseFloat(avgDif) > 0 ? '#ef4444' : parseFloat(avgDif) <= -5 ? '#a78bfa' : '#10b981' }}>
+                                    {parseFloat(avgDif) > 0 ? '+' : ''}{avgDif}°C
+                                </span>
+                                <span className="dif-avg-status">
+                                    {parseFloat(avgDif) > 2 ? '⚠️ Ajustar clima nocturno ↓' : parseFloat(avgDif) > 0 ? '⚠ DIF positivo leve' : '✅ DIF óptimo'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Legend — always visible */}
+                <div className="dif-legend-compact">
+                    <div className="dif-legend-item">
+                        <span className="dif-legend-dot" style={{ background: '#a78bfa' }} />
+                        <span>DIF &lt; -5°C: Purple Boost / Resina</span>
+                    </div>
+                    <div className="dif-legend-item">
+                        <span className="dif-legend-dot" style={{ background: '#10b981' }} />
+                        <span>DIF 0 a -5°C: Óptimo flora</span>
+                    </div>
+                    <div className="dif-legend-item">
+                        <span className="dif-legend-dot" style={{ background: '#ef4444' }} />
+                        <span>DIF &gt; 0°C: Estiramiento (bajar temp nocturna)</span>
                     </div>
                 </div>
             </div>
@@ -331,7 +599,7 @@ const PulseClimateHealth = ({ roomId }) => {
 
                 <div className="correlation-chart">
                     <ResponsiveContainer width="100%" height={450}>
-                        <LineChart data={evolutionData} margin={{ top: 20, right: 70, left: 20, bottom: 20 }}>
+                        <ComposedChart data={evolutionData} margin={{ top: 20, right: 70, left: 20, bottom: 20 }}>
                             <defs>
                                 <linearGradient id="ppfdGradient" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="5%" stopColor="#facc15" stopOpacity={0.4} />
@@ -488,7 +756,7 @@ const PulseClimateHealth = ({ roomId }) => {
                                     animationDuration={800}
                                 />
                             )}
-                        </LineChart>
+                        </ComposedChart>
                     </ResponsiveContainer>
                 </div>
 

@@ -98,8 +98,8 @@
 
 .pulse-realtime-strip {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 16px;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 14px;
     margin-bottom: 30px;
 }
 
@@ -138,8 +138,45 @@
     opacity: 1;
 }
 
-.kpi-card-pulse.vpd-critical {
-    border: 1px solid rgba(16, 185, 129, 0.3);
+/* KPI Status Border Colors */
+.kpi-card-pulse.kpi-ok {
+    border-color: rgba(16, 185, 129, 0.25);
+}
+
+.kpi-card-pulse.kpi-ok::before {
+    background: linear-gradient(90deg, transparent, #10b981, transparent);
+    opacity: 0.6;
+}
+
+.kpi-card-pulse.kpi-warning {
+    border-color: rgba(245, 158, 11, 0.3);
+}
+
+.kpi-card-pulse.kpi-warning::before {
+    background: linear-gradient(90deg, transparent, #f59e0b, transparent);
+    opacity: 0.7;
+}
+
+.kpi-card-pulse.kpi-danger {
+    border-color: rgba(239, 68, 68, 0.35);
+    animation: danger-pulse 2.5s ease-in-out infinite;
+}
+
+.kpi-card-pulse.kpi-danger::before {
+    background: linear-gradient(90deg, transparent, #ef4444, transparent);
+    opacity: 0.8;
+}
+
+@keyframes danger-pulse {
+
+    0%,
+    100% {
+        border-color: rgba(239, 68, 68, 0.35);
+    }
+
+    50% {
+        border-color: rgba(239, 68, 68, 0.55);
+    }
 }
 
 .kpi-icon {
@@ -169,6 +206,11 @@
     color: #6366f1;
 }
 
+.kpi-icon.status-warn {
+    color: #f59e0b;
+    filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.5));
+}
+
 .kpi-content {
     flex: 1;
 }
@@ -187,19 +229,26 @@
 }
 
 .kpi-subtitle {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     color: #94a3b8;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
-/* ========== 2. DIF MORPHOLOGY SECTION ========== */
+.kpi-target {
+    font-size: 0.62rem;
+    color: #475569;
+    font-family: var(--font-mono, monospace);
+    margin-top: 2px;
+}
+
+/* ========== 2. DIF SECTION — Redesigned ========== */
 
 .dif-morphology-section {
     background: linear-gradient(135deg, rgba(30, 30, 30, 0.9), rgba(20, 20, 20, 0.95));
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 16px;
-    padding: 24px;
+    padding: 28px;
     margin-bottom: 30px;
 }
 
@@ -207,20 +256,61 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
 }
 
 .section-header h3 {
-    font-size: 1.25rem;
+    font-size: 1.15rem;
     font-weight: 600;
     color: #ffffff;
     margin: 0;
+    display: flex;
+    align-items: center;
 }
 
+/* View Toggle Controls */
+.dif-view-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.dif-view-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.3);
+    color: #94a3b8;
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    font-family: inherit;
+}
+
+.dif-view-btn:hover {
+    border-color: rgba(255, 255, 255, 0.25);
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.dif-view-btn.active {
+    background: rgba(249, 115, 22, 0.15);
+    border-color: #f97316;
+    color: #f97316;
+    font-weight: 600;
+}
+
+/* DIF Badge */
 .dif-badge {
     padding: 8px 16px;
     border-radius: 20px;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -257,74 +347,472 @@
     }
 }
 
-.dif-chart-container {
-    margin-bottom: 20px;
+/* ===== Day Selector Pills ===== */
+.dif-day-selector {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 24px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
 }
 
-.dif-explanation {
+.dif-day-pill {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
     align-items: center;
-    padding-top: 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.dif-info-card {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+    gap: 4px;
+    padding: 12px 18px;
+    border-radius: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.08);
     background: rgba(0, 0, 0, 0.3);
-    padding: 12px 20px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 80px;
+    font-family: inherit;
+    position: relative;
 }
 
-.dif-label {
-    font-size: 0.9rem;
-    color: #94a3b8;
+.dif-day-pill:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.5);
+    transform: translateY(-2px);
 }
 
-.dif-value {
-    font-size: 1.5rem;
+.dif-day-pill.selected {
+    border-color: var(--pill-accent, #f97316);
+    background: rgba(249, 115, 22, 0.08);
+    box-shadow: 0 4px 16px rgba(249, 115, 22, 0.2);
+}
+
+.dif-day-pill.is-today::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #00ff9d;
+    box-shadow: 0 0 8px rgba(0, 255, 157, 0.5);
+}
+
+.dif-pill-day {
+    font-size: 0.85rem;
     font-weight: 700;
     color: #ffffff;
 }
 
-.dif-value.purple-boost {
-    color: #8b5cf6;
+.dif-pill-date {
+    font-size: 0.68rem;
+    color: #64748b;
+    font-family: var(--font-mono, monospace);
 }
 
-.dif-value.stretch-alert {
-    color: #ef4444;
+.dif-pill-dif {
+    font-size: 0.9rem;
+    font-weight: 700;
+    font-family: var(--font-mono, monospace);
 }
 
-.dif-guide {
+.dif-pill-icon {
+    font-size: 0.85rem;
+}
+
+/* ===== Day Detail View ===== */
+.dif-day-detail {
+    animation: fadeInUp 0.4s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Summary Cards */
+.dif-summary-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.dif-summary-card {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px;
+    padding: 20px;
     display: flex;
-    gap: 24px;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
 }
 
-.guide-item {
+.dif-summary-card:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+    transform: translateY(-1px);
+}
+
+.dif-card-icon {
+    color: #64748b;
+    flex-shrink: 0;
+}
+
+.dif-card-icon.sun {
+    color: #f59e0b;
+    filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.5));
+}
+
+.dif-card-icon.moon {
+    color: #818cf8;
+    filter: drop-shadow(0 0 8px rgba(129, 140, 248, 0.5));
+}
+
+.dif-card-info {
+    flex: 1;
+    min-width: 100px;
+}
+
+.dif-card-label {
+    display: block;
+    font-size: 0.72rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.dif-card-value {
+    display: block;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.1;
+    font-family: var(--font-mono, monospace);
+}
+
+.dif-card-bar-wrap {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 4px;
+}
+
+.dif-card-bar {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s ease;
+}
+
+.dif-card-status {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.dif-card-result {
+    border-left: 3px solid rgba(255, 255, 255, 0.1);
+}
+
+.dif-card-stretch {
+    border-left-color: #ef4444;
+}
+
+.dif-card-ok {
+    border-left-color: #10b981;
+}
+
+.dif-card-purple {
+    border-left-color: #a78bfa;
+}
+
+/* 24h Chart */
+.dif-24h-chart {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 14px;
+    padding: 20px;
+}
+
+.dif-chart-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #cbd5e1;
+    margin-bottom: 16px;
+}
+
+.dif-chart-legend-inline {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-top: 12px;
+    font-size: 0.78rem;
+    color: #94a3b8;
+    flex-wrap: wrap;
+}
+
+.dif-chart-legend-inline span {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+}
+
+.dif-inline-dot {
+    display: inline-block;
+    width: 14px;
+    height: 10px;
+    border-radius: 3px;
+}
+
+.dif-inline-line {
+    display: inline-block;
+    width: 16px;
+    height: 0;
+    border-top: 2px dashed;
+}
+
+/* DIF Day Tooltip */
+.dif-day-tooltip {
+    background: rgba(10, 10, 10, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    padding: 12px 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8);
+}
+
+.dif-day-tooltip-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 6px;
     font-size: 0.85rem;
     color: #cbd5e1;
 }
 
-.guide-icon {
-    font-size: 1.2rem;
+.dif-tt-day {
+    color: #fbbf24;
 }
 
-.guide-icon.purple {
-    color: #8b5cf6;
+.dif-tt-night {
+    color: #818cf8;
 }
 
-.guide-icon.neutral {
+.dif-day-tooltip-value {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+/* ===== Week Overview ===== */
+.dif-week-overview {
+    animation: fadeInUp 0.4s ease;
+}
+
+.dif-week-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.dif-week-card {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px;
+    padding: 16px 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.dif-week-card:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(0, 0, 0, 0.5);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.dif-week-card.today {
+    border-color: rgba(0, 255, 157, 0.25);
+    background: rgba(0, 255, 157, 0.04);
+}
+
+.dif-week-card-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.dif-week-day {
+    font-weight: 700;
+    color: #ffffff;
+    font-size: 0.9rem;
+}
+
+.dif-today-badge {
+    font-size: 0.55rem;
+    font-weight: 700;
+    background: #00ff9d;
+    color: #0a0a0a;
+    padding: 1px 5px;
+    border-radius: 4px;
+    letter-spacing: 0.3px;
+}
+
+/* Temperature Visual Bars */
+.dif-temp-visual {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.dif-temp-bar-group {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 8px;
+    height: 80px;
+    width: 100%;
+}
+
+.dif-temp-bar {
+    width: 20px;
+    border-radius: 6px 6px 2px 2px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 4px;
+    transition: height 0.5s ease;
+    min-height: 20px;
+    position: relative;
+}
+
+.dif-temp-bar.day-bar {
+    background: linear-gradient(180deg, #f97316, #f59e0b);
+    box-shadow: 0 0 10px rgba(249, 115, 22, 0.3);
+}
+
+.dif-temp-bar.night-bar {
+    background: linear-gradient(180deg, #818cf8, #6366f1);
+    box-shadow: 0 0 10px rgba(129, 140, 248, 0.3);
+}
+
+.dif-temp-bar-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #ffffff;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    white-space: nowrap;
+}
+
+.dif-temp-labels {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    font-size: 0.75rem;
+}
+
+.dif-week-dif {
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: var(--font-mono, monospace);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.dif-week-icon {
+    font-size: 0.85rem;
+}
+
+.dif-week-status {
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+/* Week Footer */
+.dif-week-footer {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    padding: 16px 20px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.dif-week-avg {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.dif-avg-label-text {
+    font-size: 0.85rem;
+    font-weight: 600;
     color: #94a3b8;
 }
 
-.guide-icon.alert {
-    color: #ef4444;
+.dif-avg-value {
+    font-size: 1.3rem;
+    font-weight: 800;
+    font-family: var(--font-mono, monospace);
+}
+
+.dif-avg-status {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #cbd5e1;
+}
+
+/* DIF Legend — Compact */
+.dif-legend-compact {
+    display: flex;
+    gap: 20px;
+    padding: 16px 0 0;
+    margin-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    flex-wrap: wrap;
+}
+
+.dif-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    color: #94a3b8;
+}
+
+.dif-legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+/* DLI KPI styles */
+.kpi-card-pulse.dli-alert {
+    border-color: rgba(245, 158, 11, 0.3);
 }
 
 /* ========== 3. AIR QUALITY GRID ========== */
@@ -640,6 +1128,10 @@
     .pulse-realtime-strip {
         grid-template-columns: repeat(3, 1fr);
     }
+
+    .dif-week-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
 }
 
 @media (max-width: 1024px) {
@@ -651,8 +1143,12 @@
         grid-template-columns: 1fr;
     }
 
-    .series-toggles {
-        flex-wrap: wrap;
+    .dif-week-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .dif-summary-cards {
+        grid-template-columns: 1fr;
     }
 }
 
@@ -667,18 +1163,26 @@
         align-items: stretch;
     }
 
-    .dif-explanation {
-        flex-direction: column;
-        gap: 16px;
-        align-items: flex-start;
+    .dif-week-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
 
-    .dif-guide {
-        flex-direction: column;
-        gap: 12px;
+    .dif-day-selector {
+        gap: 6px;
     }
 
-    .series-toggles {
-        justify-content: center;
+    .dif-day-pill {
+        min-width: 65px;
+        padding: 8px 12px;
+    }
+
+    .dif-legend-compact {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .dif-view-controls {
+        flex-wrap: wrap;
+        justify-content: flex-end;
     }
 }

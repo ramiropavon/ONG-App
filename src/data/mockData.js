@@ -45,6 +45,12 @@ export const rooms = [
     type: 'Flora',
     m2: 20,
     lightsWatts: 4000,
+    lightsOnTime: '06:00',
+    lightsOffTime: '18:00',
+    photoperiod: 12,
+    floraStartDate: '2026-01-15',
+    activeGenetics: ['Avocado'],
+    cycleId: 'cycle-R2-001',
     temp: 26,
     humidity: 50,
     vpd: 1.25,
@@ -74,6 +80,12 @@ export const rooms = [
     type: 'Flora',
     m2: 20,
     lightsWatts: 4000,
+    lightsOnTime: '06:00',
+    lightsOffTime: '18:00',
+    photoperiod: 12,
+    floraStartDate: '2026-02-01',
+    activeGenetics: ['Sangría'],
+    cycleId: 'cycle-R3-001',
     temp: 25.5,
     humidity: 55,
     vpd: 1.1,
@@ -304,25 +316,45 @@ export const pulseRealTime = {
   }
 };
 
-// Day vs Night Temperature (DIF Analysis) - Last 7 days
+// Day vs Night Temperature (DIF Analysis) - Last 7 days with hourly data
+const generateHourlyTemps = (tempDay, tempNight, lightOn = 8, lightOff = 20) => {
+  const hours = [];
+  for (let h = 0; h < 24; h++) {
+    let temp;
+    const isDay = h >= lightOn && h < lightOff;
+    if (!isDay) {
+      // Night: smooth curve around tempNight
+      const nightProgress = h < lightOn ? (lightOn - h) / lightOn : (h - lightOff) / (24 - lightOff);
+      temp = tempNight + Math.sin(nightProgress * Math.PI) * 0.8 - 0.3;
+    } else {
+      // Day: bell curve peaking around midday
+      const dayMid = (lightOn + lightOff) / 2;
+      const dayProgress = (h - lightOn) / (lightOff - lightOn);
+      temp = tempNight + (tempDay - tempNight) * Math.sin(dayProgress * Math.PI);
+    }
+    hours.push({ hour: `${String(h).padStart(2, '0')}:00`, temp: parseFloat(temp.toFixed(1)), isDay });
+  }
+  return hours;
+};
+
 export const pulseDayNightTemp = {
   R2: [
-    { day: 'Lun', tempDay: 27.5, tempNight: 21.0 },
-    { day: 'Mar', tempDay: 28.0, tempNight: 20.5 },
-    { day: 'Mie', tempDay: 27.2, tempNight: 21.5 },
-    { day: 'Jue', tempDay: 26.8, tempNight: 20.8 },
-    { day: 'Vie', tempDay: 27.5, tempNight: 21.2 },
-    { day: 'Sab', tempDay: 28.2, tempNight: 20.0 },
-    { day: 'Dom', tempDay: 27.0, tempNight: 21.0 }
+    { day: 'Lun', date: '2026-02-18', tempDay: 27.5, tempNight: 21.0, hourly: generateHourlyTemps(27.5, 21.0) },
+    { day: 'Mar', date: '2026-02-19', tempDay: 28.0, tempNight: 20.5, hourly: generateHourlyTemps(28.0, 20.5) },
+    { day: 'Mie', date: '2026-02-20', tempDay: 27.2, tempNight: 21.5, hourly: generateHourlyTemps(27.2, 21.5) },
+    { day: 'Jue', date: '2026-02-21', tempDay: 26.8, tempNight: 20.8, hourly: generateHourlyTemps(26.8, 20.8) },
+    { day: 'Vie', date: '2026-02-22', tempDay: 27.5, tempNight: 21.2, hourly: generateHourlyTemps(27.5, 21.2) },
+    { day: 'Sab', date: '2026-02-23', tempDay: 28.2, tempNight: 20.0, hourly: generateHourlyTemps(28.2, 20.0) },
+    { day: 'Hoy', date: '2026-02-24', tempDay: 27.0, tempNight: 21.0, hourly: generateHourlyTemps(27.0, 21.0) }
   ],
   R3: [
-    { day: 'Lun', tempDay: 26.5, tempNight: 22.0 },
-    { day: 'Mar', tempDay: 27.0, tempNight: 22.5 },
-    { day: 'Mie', tempDay: 26.2, tempNight: 23.0 },
-    { day: 'Jue', tempDay: 25.8, tempNight: 22.8 },
-    { day: 'Vie', tempDay: 26.5, tempNight: 22.2 },
-    { day: 'Sab', tempDay: 27.2, tempNight: 21.5 },
-    { day: 'Dom', tempDay: 26.0, tempNight: 22.0 }
+    { day: 'Lun', date: '2026-02-18', tempDay: 26.5, tempNight: 22.0, hourly: generateHourlyTemps(26.5, 22.0) },
+    { day: 'Mar', date: '2026-02-19', tempDay: 27.0, tempNight: 22.5, hourly: generateHourlyTemps(27.0, 22.5) },
+    { day: 'Mie', date: '2026-02-20', tempDay: 26.2, tempNight: 23.0, hourly: generateHourlyTemps(26.2, 23.0) },
+    { day: 'Jue', date: '2026-02-21', tempDay: 25.8, tempNight: 22.8, hourly: generateHourlyTemps(25.8, 22.8) },
+    { day: 'Vie', date: '2026-02-22', tempDay: 26.5, tempNight: 22.2, hourly: generateHourlyTemps(26.5, 22.2) },
+    { day: 'Sab', date: '2026-02-23', tempDay: 27.2, tempNight: 21.5, hourly: generateHourlyTemps(27.2, 21.5) },
+    { day: 'Hoy', date: '2026-02-24', tempDay: 26.0, tempNight: 22.0, hourly: generateHourlyTemps(26.0, 22.0) }
   ]
 };
 

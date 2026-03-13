@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { rooms, batches, tasks, genetics, sensorHistory, irrigationLogs } from '../data/mockData';
 import {
     Leaf, Calendar, Lightbulb, Thermometer, Layers, Sprout, Zap,
-    Droplets, Activity, Wind, Clock, AlertCircle
+    Droplets, Activity, Wind, Clock, AlertCircle, Edit3
 } from 'lucide-react';
 import {
     LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area, BarChart, Bar
 } from 'recharts';
-import FloraHighPerformance from './FloraHighPerformance';
+import FloraRoomDashboard from './FloraRoomDashboard';
 import PulseClimateHealth from './PulseClimateHealth';
+import DailyLogPanel from './DailyLogPanel';
 import './RoomDetail.css';
 
 
@@ -25,6 +26,7 @@ const calculateDays = (dateStr) => {
 
 const RoomDetail = ({ roomId }) => {
     const [activeTab, setActiveTab] = useState('resumen');
+    const [isDailyLogOpen, setIsDailyLogOpen] = useState(false);
 
     const room = rooms.find(r => r.id === roomId);
 
@@ -375,6 +377,40 @@ const RoomDetail = ({ roomId }) => {
 
 
 
+    // ─── FLORA: Single unified dashboard (no tabs) ───
+    if (room.type === 'Flora') {
+        return (
+            <div className="room-detail">
+                <header className="room-header-adv">
+                    <div>
+                        <h2 className="room-title">{room.name}</h2>
+                        <div className="room-badges">
+                            <span className={`badge ${room.type.toLowerCase()}`}>{room.type}</span>
+                            <span className="badge info">{room.m2} m²</span>
+                        </div>
+                    </div>
+                </header>
+
+                <FloraRoomDashboard room={room} />
+
+                {/* Daily Log FAB */}
+                <button
+                    className="daily-log-fab"
+                    onClick={() => setIsDailyLogOpen(true)}
+                >
+                    <Edit3 size={18} />
+                    Registrar Datos
+                </button>
+                <DailyLogPanel
+                    isOpen={isDailyLogOpen}
+                    onClose={() => setIsDailyLogOpen(false)}
+                    room={room}
+                />
+            </div>
+        );
+    }
+
+    // ─── VEGE & other rooms: keep tab layout ───
     return (
         <div className="room-detail">
             <header className="room-header-adv">

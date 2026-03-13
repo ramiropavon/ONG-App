@@ -16,8 +16,7 @@ INSERT INTO strains (name, breeder, genetics, expected_flowering_days, expected_
 -- ============================================================================
 -- ROOMS
 -- ============================================================================
-
-INSERT INTO rooms (name, type, area_m2, target_vpd_min, target_vpd_max, target_temp_min, target_temp_max, target_humidity_min, target_humidity_max, pulse_device_id, notes) VALUES
+INSERT INTO rooms (name, type, area_m2, target_vpd_min, target_vpd_max, target_temp_min, target_temp_max, target_humidity_min, target_humidity_max, sensor_device_id, notes) VALUES
 ('Vege', 'vege', 20.0, 0.8, 1.0, 24.0, 27.0, 65.0, 75.0, NULL, 'Vegetative growth room - 18/6 light cycle'),
 ('Flora A', 'flora', 25.0, 1.0, 1.3, 25.0, 28.0, 50.0, 60.0, NULL, 'Flowering room A - 12/12 light cycle'),
 ('Flora B', 'flora', 25.0, 1.0, 1.3, 25.0, 28.0, 50.0, 60.0, NULL, 'Flowering room B - 12/12 light cycle'),
